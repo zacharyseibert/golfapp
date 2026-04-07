@@ -487,9 +487,12 @@
 
 <!-- LIVE SCORES -->
 <div class="page" id="page-live">
-  <div class="flex items-center justify-between" style="margin-bottom:16px;">
-    <div><div class="section-kicker">Official scoring + pool tracker</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Live Tournament Center</h2></div>
-    <button class="btn btn-ghost btn-sm" onclick="loadLiveScores()">↻ Refresh</button>
+  <div class="flex items-center justify-between" style="margin-bottom:16px; gap:12px; flex-wrap:wrap;">
+    <div><div class="section-kicker">Live leaderboard + pool tracker</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Live Tournament Center</h2></div>
+    <div class="flex gap-8" style="flex-wrap:wrap;">
+      <button class="btn btn-green btn-sm" id="btn-refresh-live" onclick="invokeRefreshLiveScores()">Refresh Live Scores</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadLiveScores()">Reload View</button>
+    </div>
   </div>
   <div class="alert alert-info" id="live-tournament-label">Masters Tournament 2026 · Official scoring and fantasy ownership</div>
   <div class="card">
@@ -602,8 +605,13 @@ const AVATARCOLORS = ['#1D9E75','#BA7517','#185FA5','#993556','#533ab7','#3B6D11
 
 const SUPABASE_URL = 'https://orlnitckumvrfuyvietn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybG5pdGNrdW12cmZ1eXZpZXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1Nzk1MTgsImV4cCI6MjA5MTE1NTUxOH0.Hos6iio6xjzgFGY8klpEwFmFZek622QE3hE3DOhksP8';
-const LIVE_LEADERBOARD_API_URL = '';
-const LIVE_LEADERBOARD_API_KEY = '';
+const EDGE_FUNCTION_REFRESH_URL = 'https://orlnitckumvrfuyvietn.supabase.co/functions/v1/refresh-live-scores';
+const LIVE_SOURCE_URLS = {
+  masters: 'https://www.espn.com/golf/leaderboard',
+  pga: 'https://www.espn.com/golf/leaderboard',
+  usopen: 'https://www.espn.com/golf/leaderboard',
+  open: 'https://www.espn.com/golf/leaderboard'
+};
 
 if (!window.supabase) {
   alert('Supabase library not found.');
@@ -771,6 +779,96 @@ function buildOwnershipRows() {
     owner: team.participant_name
   })));
   return rows.sort((a, b) => a.rank - b.rank || a.owner.localeCompare(b.owner));
+}
+
+
+function normalizeGolferName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildOwnerLookup() {
+  const byName = new Map();
+  appState.teams.forEach(team => {
+    (team.golfers || []).forEach(golfer => {
+      byName.set(normalizeGolferName(golfer.name), {
+        owner: team.participant_name,
+        rank: golfer.rank,
+        country: golfer.country || ''
+      });
+    });
+  });
+  return byName;
+}
+
+function getLiveSourceUrl(major) {
+  return LIVE_SOURCE_URLS[major?.id] || LIVE_SOURCE_URLS.masters;
+}
+
+async function invokeRefreshLiveScores() {
+  const contest = appState.contest;
+  const btn = $('btn-refresh-live');
+  if (!contest) {
+    alert('Create or open a contest first.');
+    return;
+  }
+  if (!contest.teams_generated) {
+    alert('Generate teams first.');
+    return;
+  }
+  if (!isCommissioner()) {
+    alert('Only the commissioner can refresh live scores.');
+    return;
+  }
+  if (!EDGE_FUNCTION_REFRESH_URL || EDGE_FUNCTION_REFRESH_URL.includes('PASTE_YOUR_EDGE_FUNCTION_URL_HERE')) {
+    alert('Add your Supabase Edge Function URL near the top of the file first.');
+    return;
+  }
+
+  const major = getMajorById(contest.major);
+  const sourceUrl = getLiveSourceUrl(major);
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Refreshing...';
+    }
+
+    const res = await fetch(EDGE_FUNCTION_REFRESH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({
+        contest_id: contest.id,
+        major: contest.major,
+        source_url: sourceUrl
+      })
+    });
+
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(payload.error || payload.message || 'Refresh failed.');
+    }
+
+    await loadLiveScores();
+    alert(`Live scores refreshed${payload.inserted ? ` (${payload.inserted} golfers).` : '.'}`);
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'Could not refresh live scores.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Refresh Live Scores';
+    }
+  }
 }
 
 function renderTeamLegend() {
@@ -1316,6 +1414,13 @@ async function loadLiveScores() {
   const contest = appState.contest;
   const body = $('live-scores-body');
   const label = $('live-tournament-label');
+  const refreshBtn = $('btn-refresh-live');
+
+  if (refreshBtn) {
+    refreshBtn.disabled = !contest || !contest.teams_generated || !isCommissioner();
+    refreshBtn.title = !contest ? 'Open a contest first.' : !contest.teams_generated ? 'Generate teams first.' : isCommissioner() ? '' : 'Only the commissioner can refresh live scores.';
+  }
+
   if (!contest) {
     label.textContent = 'No contest loaded';
     body.innerHTML = '<div class="empty-state">Create or open a contest first.</div>';
@@ -1325,39 +1430,138 @@ async function loadLiveScores() {
   const major = getMajorById(contest.major);
   const timing = getMajorTiming(major);
   const source = getOfficialLeaderboardConfig(major);
-  label.textContent = `${major.name} 2026 · Official scoring and fantasy ownership`;
+  label.textContent = `${major.name} 2026 · Live leaderboard and fantasy ownership`;
 
   if (!contest.teams_generated) {
-    body.innerHTML = '<div class="empty-state">Generate teams first. Once the field is assigned, this page becomes your tournament center with official scoring links and a full fantasy ownership tracker.</div>';
+    body.innerHTML = '<div class="empty-state">Generate teams first. Once the field is assigned, this page will show the live leaderboard beside the fantasy ownership mapping.</div>';
     return;
   }
 
+  const { data, error } = await sb
+    .from('live_scores')
+    .select('*')
+    .eq('contest_id', contest.id)
+    .order('sort_order', { ascending: true, nullsFirst: false })
+    .order('position_sort', { ascending: true, nullsFirst: false })
+    .order('golfer_name', { ascending: true });
+
+  if (error) {
+    console.error(error);
+    body.innerHTML = '<div class="empty-state">Could not load live scores. Make sure the <strong>live_scores</strong> table exists and try again.</div>';
+    return;
+  }
+
+  const ownerLookup = buildOwnerLookup();
   const ownershipRows = buildOwnershipRows();
-  const phaseLabel = timing.state === 'pre' ? 'Tournament not started' : timing.state === 'live' ? 'Tournament live' : 'Tournament complete';
-  const phaseCopy = timing.state === 'pre'
-    ? `Play begins ${escapeHtml(major.date)}. Use the ownership tracker now, then jump to the official leaderboard once the championship starts.`
-    : timing.state === 'live'
-      ? `Use the official leaderboard for scoring, then come back here to see exactly which fantasy owner is attached to every golfer.`
-      : `The championship window has ended. Official scoring will remain on the championship site while this tracker still shows every golfer's pool owner.`;
+  const updatedAt = data && data.length ? new Date(data[0].updated_at || Date.now()) : null;
+
+  if (!data || !data.length) {
+    const preCopy = timing.state === 'pre'
+      ? `The championship has not started yet. When play begins, the commissioner can click <strong>Refresh Live Scores</strong> to pull the latest leaderboard.`
+      : `No scraped leaderboard rows are stored yet. Click <strong>Refresh Live Scores</strong> to run the Edge Function, or use the official site while you finish setup.`;
+
+    body.innerHTML = `
+      <div class="live-layout">
+        <div>
+          <div class="source-card">
+            <div class="section-kicker">Live scoring source</div>
+            <h3 style="font-family:'Playfair Display',serif; font-size:22px; margin:4px 0 8px;">${escapeHtml(source.sourceName)}</h3>
+            <p style="font-size:13px; color:var(--text); line-height:1.6;">${preCopy}</p>
+            <div class="source-meta">
+              <span class="source-pill">${escapeHtml(timing.state === 'pre' ? 'Tournament not started' : timing.state === 'live' ? 'Live window' : 'Post-event')}</span>
+              <span class="source-pill">${appState.teams.length} fantasy teams</span>
+            </div>
+            <div class="alert alert-info" style="margin-bottom:14px;">Use the Edge Function refresh to scrape the current leaderboard into Supabase, then this page will overlay fantasy ownership automatically.</div>
+            <div class="flex gap-8" style="flex-wrap:wrap;">
+              <a class="btn btn-green" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.buttonLabel)}</a>
+              <button class="btn btn-ghost" onclick="showPage('leaderboard')">View Pool Standings</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-title">Fantasy Ownership Tracker</div>
+            <div class="team-legend">${renderTeamLegend()}</div>
+            <div class="tracker-list">
+              ${ownershipRows.map(row => `
+                <div class="tracker-row">
+                  <div class="tracker-top">
+                    <div>
+                      <div class="tracker-name">${escapeHtml(row.name)}</div>
+                      <div class="tracker-sub">World ranking #${row.rank} · ${escapeHtml(row.country || '—')}</div>
+                    </div>
+                  </div>
+                  <div class="owner-list"><span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span></div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const rows = data.map(row => {
+    const owner = ownerLookup.get(normalizeGolferName(row.golfer_name));
+    return {
+      ...row,
+      owner: owner?.owner || '',
+      rank: owner?.rank || null,
+      country: owner?.country || '',
+      isTracked: !!owner
+    };
+  });
 
   body.innerHTML = `
     <div class="live-layout">
       <div>
-        <div class="source-card">
-          <div class="section-kicker">Official tournament source</div>
-          <h3 style="font-family:'Playfair Display',serif; font-size:22px; margin:4px 0 8px;">${escapeHtml(source.sourceName)}</h3>
-          <p style="font-size:13px; color:var(--text); line-height:1.6;">${escapeHtml(phaseCopy)}</p>
-          <div class="source-meta">
-            <span class="source-pill">${escapeHtml(phaseLabel)}</span>
-            <span class="source-pill">${escapeHtml(source.availability)}</span>
-            <span class="source-pill">${appState.teams.length} fantasy teams</span>
+        <div class="card" style="margin-bottom:0;">
+          <div class="flex items-center justify-between" style="margin-bottom:14px; gap:10px; flex-wrap:wrap;">
+            <div>
+              <div class="section-kicker">Scraped leaderboard</div>
+              <h3 style="font-family:'Playfair Display',serif; font-size:22px;">${escapeHtml(major.name)} Leaderboard</h3>
+            </div>
+            <div class="source-meta">
+              <span class="source-pill">${rows.length} golfers</span>
+              <span class="source-pill">${updatedAt ? `Updated ${updatedAt.toLocaleString()}` : 'Updated just now'}</span>
+            </div>
           </div>
-          <div class="alert alert-info" style="margin-bottom:14px;">${escapeHtml(source.embedNote)}</div>
-          <div class="flex gap-8" style="flex-wrap:wrap;">
-            <a class="btn btn-green" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.buttonLabel)}</a>
-            <button class="btn btn-ghost" onclick="showPage('leaderboard')">View Pool Standings</button>
+          <table class="live-table">
+            <thead>
+              <tr>
+                <th style="width:44px;">Pos</th>
+                <th>Golfer</th>
+                <th style="width:70px;">Total</th>
+                <th style="width:70px;">Today</th>
+                <th style="width:70px;">Thru</th>
+                <th style="width:140px;">On Team</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => {
+                const totalCls = String(row.total_text || '').startsWith('-') ? 'score-under' : String(row.total_text || '').startsWith('+') ? 'score-over' : 'score-even';
+                const todayCls = String(row.round_text || '').startsWith('-') ? 'score-under' : String(row.round_text || '').startsWith('+') ? 'score-over' : 'score-even';
+                return `
+                  <tr class="${row.isTracked ? 'highlight-row' : ''}">
+                    <td class="live-pos">${escapeHtml(row.position_text || '-')}</td>
+                    <td>
+                      <div style="font-weight:500;">${escapeHtml(row.golfer_name)}</div>
+                      <div style="font-size:11px; color:var(--muted);">${row.rank ? `Pool golfer · WR #${row.rank}` : 'Not on a fantasy team'}</div>
+                    </td>
+                    <td class="${totalCls}">${escapeHtml(row.total_text || '-')}</td>
+                    <td class="${todayCls}">${escapeHtml(row.round_text || '-')}</td>
+                    <td style="color:var(--muted);">${escapeHtml(row.thru_text || '-')}</td>
+                    <td>${row.owner ? `<span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span>` : '<span class="text-muted">—</span>'}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+          <div class="live-note">Highlighted rows are golfers assigned to one of your fantasy teams. Refresh uses your Supabase Edge Function scraper; the official site remains your backup if the source markup changes.</div>
+          <div class="mt-16">
+            <a class="btn btn-ghost btn-sm" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.buttonLabel)}</a>
           </div>
-          <div class="live-note">This free version does not scrape or mirror live score data inside the app. It keeps official scoring on the event site and makes the fantasy ownership layer obvious here.</div>
         </div>
       </div>
       <div>
@@ -1365,26 +1569,25 @@ async function loadLiveScores() {
           <div class="card-title">Fantasy Ownership Tracker</div>
           <div class="team-legend">${renderTeamLegend()}</div>
           <div class="tracker-list">
-            ${ownershipRows.map(row => `
+            ${rows.filter(r => r.isTracked).map(row => `
               <div class="tracker-row">
                 <div class="tracker-top">
                   <div>
-                    <div class="tracker-name">${escapeHtml(row.name)}</div>
-                    <div class="tracker-sub">World ranking #${row.rank} · ${escapeHtml(row.country || '—')} · ${escapeHtml('Tier ' + (Math.floor((row.rank - 1) / appState.participants.length) + 1))}</div>
+                    <div class="tracker-name">${escapeHtml(row.golfer_name)}</div>
+                    <div class="tracker-sub">${escapeHtml((row.position_text || '-') + ' · ' + (row.total_text || '-') + ' total · ' + (row.thru_text || '-'))}</div>
                   </div>
                 </div>
                 <div class="owner-list"><span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span></div>
               </div>
             `).join('')}
           </div>
-          <div class="live-note">Tip: keep this page open in one tab and the official leaderboard in another. Your group gets the best free setup without fragile scraping.</div>
         </div>
       </div>
     </div>
   `;
 }
 
-function renderSetup() {
+function renderSetup() { {
   const contest = appState.contest;
   const participants = appState.participants;
   const previewCount = participants.length >= 2 ? participants.length : parseInt($('setup-maxplayers').value || '6', 10);
