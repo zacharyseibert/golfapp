@@ -277,6 +277,52 @@
   .alert-info { background: var(--green-light); color: var(--green-dark); border: 0.5px solid var(--green); }
   .alert-warn { background: var(--gold-light); color: var(--gold); border: 0.5px solid var(--amber); }
 
+
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .summary-card {
+    background: rgba(255,255,255,0.72);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    backdrop-filter: blur(2px);
+  }
+  .summary-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .summary-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; line-height: 1.1;
+  }
+  .summary-sub {
+    font-size: 12px; color: var(--muted); margin-top: 4px;
+  }
+  .info-list {
+    display: grid; gap: 10px; margin-top: 10px;
+  }
+  .info-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 0; border-bottom: 0.5px solid var(--border);
+  }
+  .info-item:last-child { border-bottom: none; }
+  .info-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--green-light); color: var(--green-dark);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; flex: 0 0 28px;
+  }
+  .section-header {
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+  }
+  .section-kicker {
+    font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  @media (max-width: 760px) {
+    .nav { height: auto; padding: 14px 16px; gap: 12px; flex-wrap: wrap; }
+    .nav-tabs { width: 100%; overflow-x: auto; padding-bottom: 2px; }
+    .summary-grid, .setup-grid { grid-template-columns: 1fr; }
+  }
+
   .flex { display: flex; }
   .items-center { align-items: center; }
   .justify-between { justify-content: space-between; }
@@ -302,7 +348,7 @@
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('home')">Home</button>
     <button class="nav-tab" onclick="showPage('draft')">Teams</button>
-    <button class="nav-tab" onclick="showPage('leaderboard')">Leaderboard</button>
+    <button class="nav-tab" onclick="showPage('leaderboard')">Standings</button>
     <button class="nav-tab" onclick="showPage('live')">Live Scores</button>
     <button class="nav-tab" onclick="showPage('setup')">Setup</button>
   </div>
@@ -321,6 +367,33 @@
     </div>
   </div>
 
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="summary-label">Format</div>
+      <div class="summary-value">Auto-balanced</div>
+      <div class="summary-sub">No draft, no manual picks, no stacked teams.</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Tiers</div>
+      <div class="summary-value" id="summary-tier-count">—</div>
+      <div class="summary-sub" id="summary-tier-note">Generated from the number of joined players.</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Team Size</div>
+      <div class="summary-value" id="summary-team-size">—</div>
+      <div class="summary-sub" id="summary-team-note">Every team gets one golfer from each ranking tier.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">How It Works</div>
+    <div class="info-list">
+      <div class="info-item"><span class="info-icon">1</span><div><div class="font-500">Share one link</div><div class="text-muted">Create the contest once, then send the contest URL to everyone joining the pool.</div></div></div>
+      <div class="info-item"><span class="info-icon">2</span><div><div class="font-500">Fill the field</div><div class="text-muted">When the participant list is set, the commissioner locks entries and runs the team generator.</div></div></div>
+      <div class="info-item"><span class="info-icon">3</span><div><div class="font-500">Balance every roster</div><div class="text-muted">The field is split into equal ranking tiers based on the number of entries, and each team gets one golfer from every tier.</div></div></div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-title">Join Contest</div>
     <div id="join-section">
@@ -328,10 +401,10 @@
         <input type="text" id="join-name" placeholder="Enter your name..." maxlength="24" />
         <button class="btn btn-green" onclick="joinContest()">Join Contest</button>
       </div>
-      <p class="text-muted mt-8">Share the contest link. When everyone has joined, the commissioner can lock entries and auto-generate balanced teams.</p>
+      <p class="text-muted mt-8">Share the contest link, collect entries, then generate balanced teams in one click.</p>
     </div>
     <div id="already-joined" style="display:none;">
-      <div class="alert alert-info">You are joined as <strong id="joined-as-name"></strong>. Head to Teams once the commissioner generates the pool.</div>
+      <div class="alert alert-info">You are joined as <strong id="joined-as-name"></strong>. You’re in. Come back to Team Assignments once the commissioner generates the field.</div>
     </div>
   </div>
 
@@ -357,13 +430,13 @@
     <div class="empty-state" style="padding: 60px 20px;">
       <div style="font-size:40px; margin-bottom:16px;">🏌️</div>
       <h3 style="font-family:'Playfair Display',serif; font-size:20px; margin-bottom:8px;">Teams have not been generated yet</h3>
-      <p>Wait for the commissioner to lock entries and generate teams, or go to Setup to configure your contest.</p>
+      <p>Once entries are locked, the generator builds every roster automatically from the ranking tiers.</p>
     </div>
   </div>
 
   <div id="draft-active">
     <div class="flex items-center justify-between" style="margin-bottom:16px;">
-      <h2 style="font-family:'Playfair Display',serif; font-size:22px;">Team Draw</h2>
+      <div><div class="section-kicker">Generated field</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Team Assignments</h2></div>
       <div id="draft-status-badge"></div>
     </div>
 
@@ -390,7 +463,7 @@
 <!-- LEADERBOARD -->
 <div class="page" id="page-leaderboard">
   <div class="flex items-center justify-between" style="margin-bottom:16px;">
-    <h2 style="font-family:'Playfair Display',serif; font-size:22px;">Fantasy Leaderboard</h2>
+    <div><div class="section-kicker">Projected results</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Pool Standings</h2></div>
     <span class="status-pill status-draft" id="lb-status-pill">Entries Open</span>
   </div>
   <div class="card">
@@ -401,7 +474,7 @@
 <!-- LIVE SCORES -->
 <div class="page" id="page-live">
   <div class="flex items-center justify-between" style="margin-bottom:16px;">
-    <h2 style="font-family:'Playfair Display',serif; font-size:22px;">Live Tournament Scores</h2>
+    <div><div class="section-kicker">Tournament feed</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Course Leaderboard</h2></div>
     <button class="btn btn-ghost btn-sm" onclick="loadLiveScores()">↻ Refresh</button>
   </div>
   <div class="alert alert-info" id="live-tournament-label">Masters Tournament 2026 · Leaderboard</div>
@@ -412,7 +485,7 @@
 
 <!-- SETUP PAGE -->
 <div class="page" id="page-setup">
-  <h2 style="font-family:'Playfair Display',serif; font-size:22px; margin-bottom:16px;">Commissioner Setup</h2>
+  <div class="section-header"><div><div class="section-kicker">Contest admin</div><h2 style="font-family:'Playfair Display',serif; font-size:22px; margin-bottom:0;">Commissioner Console</h2></div><div class="text-muted">Create, lock, reset, and preview team generation.</div></div>
   <div class="card">
     <div class="card-title">Tournament Settings</div>
     <div class="setup-grid">
@@ -457,12 +530,12 @@
       <button class="btn btn-ghost" onclick="resetDraft()">Reset Contest</button>
       <button class="btn btn-ghost" onclick="clearAll()">Clear All Data</button>
     </div>
-    <p class="text-muted mt-8">Locking the contest prevents new entries and generates evenly balanced teams from the world ranking tiers. Reset removes generated teams and unlocks entries.</p>
+    <p class="text-muted mt-8">Generate Teams locks new entries and builds every roster from equal ranking tiers. Reset removes the generated teams and opens the contest again.</p>
   </div>
 
   <div class="card">
     <div class="card-title">Golfer Pool — World Rankings</div>
-    <p class="text-muted" style="margin-bottom:12px;">Top 60 golfers by world ranking are split into dynamic tiers sized to the number of joined players, so every team gets one golfer from each tier.</p>
+    <p class="text-muted" style="margin-bottom:12px;">The top 60 golfers are split into ranking tiers sized to the number of joined players, so every roster gets one golfer from each tier.</p>
     <div id="admin-tier-preview"></div>
   </div>
 </div>
@@ -937,21 +1010,32 @@ function renderHome() {
 
   if (!contest) {
     $('hero-tournament').textContent = 'Create a Contest';
-    $('hero-venue').textContent = 'Head to Setup to create a pool, then share the link so others can join.';
+    $('hero-venue').textContent = 'Open Commissioner Console to create a pool, then share the link so everyone joins the same contest.';
     $('hero-count').textContent = '0 / 0';
     $('hero-status').textContent = 'Not Created';
-    $('hero-draft').textContent = 'Waiting';
+    $('hero-draft').textContent = 'Not Started';
     $('participant-count-label').textContent = '0 joined';
     $('participant-list').innerHTML = '<div class="empty-state" style="width:100%; padding:16px;">No contest yet. Go to Setup and create one.</div>';
     $('join-section').style.display = 'block';
     $('already-joined').style.display = 'none';
+    $('summary-tier-count').textContent = '—';
+    $('summary-tier-note').textContent = 'Generated from the number of joined players.';
+    $('summary-team-size').textContent = '—';
+    $('summary-team-note').textContent = 'Every team gets one golfer from each ranking tier.';
   } else {
     const major = getMajorById(contest.major);
     $('hero-tournament').textContent = `${major.name} 2026`;
     $('hero-venue').textContent = `${major.venue} · ${major.location} · ${major.date}`;
     $('hero-count').textContent = `${participants.length} / ${contest.max_players}`;
-    $('hero-status').textContent = contest.teams_generated ? 'Live' : contest.locked ? 'Locked' : 'Open';
-    $('hero-draft').textContent = contest.teams_generated ? 'Teams Ready' : contest.locked ? 'Locked' : 'Open for Entries';
+    $('hero-status').textContent = contest.teams_generated ? 'Live' : contest.locked ? 'Locked' : 'Open for Entries';
+    $('hero-draft').textContent = contest.teams_generated ? 'Teams Generated' : contest.locked ? 'Locked' : 'Collecting Entries';
+
+    const activeCount = participants.length || parseInt(contest.max_players || 0, 10) || 0;
+    const teamSize = activeCount >= 2 ? Math.floor(GOLFERS.length / activeCount) : 0;
+    $('summary-tier-count').textContent = activeCount >= 2 ? `${teamSize} tiers` : '—';
+    $('summary-tier-note').textContent = activeCount >= 2 ? `${activeCount} golfers per tier based on current entries.` : 'Generated from the number of joined players.';
+    $('summary-team-size').textContent = activeCount >= 2 ? `${teamSize} golfers` : '—';
+    $('summary-team-note').textContent = activeCount >= 2 ? `Each roster gets 1 golfer from each of the ${teamSize} tiers.` : 'Every team gets one golfer from each ranking tier.';
 
     const joinedMatch = currentUser ? participants.find(p => p.name.toLowerCase() === currentUser.toLowerCase()) : null;
     if (joinedMatch) {
@@ -1010,7 +1094,7 @@ function renderDraft() {
   $('draft-not-started').style.display = 'none';
   $('draft-active').style.display = 'block';
   $('draft-status-badge').innerHTML = '<span class="status-pill status-live">Teams Ready</span>';
-  $('current-pick-info').innerHTML = `<strong>${participants.length}</strong> players · <strong>${teams.length}</strong> completed teams`;
+  $('current-pick-info').innerHTML = `<strong>${participants.length}</strong> entries · <strong>${teams.length}</strong> balanced rosters generated`;
 
   const tiers = buildDynamicTiers(GOLFERS, participants.length);
   $('tier-display').innerHTML = tiers.map((tier, idx) => `
@@ -1026,7 +1110,7 @@ function renderDraft() {
           return `<div class="golfer-card ${mine ? 'my-pick' : 'taken'}">
             <div class="golfer-name">${escapeHtml(g.name)}</div>
             <div class="golfer-rank">WR #${g.rank} · ${escapeHtml(g.country)}</div>
-            <div class="pick-owner ${mine ? 'mine' : ''}">${owner ? `On ${escapeHtml(owner.participant_name)}` : 'Unassigned'}</div>
+            <div class="pick-owner ${mine ? 'mine' : ''}">${owner ? `Assigned to ${escapeHtml(owner.participant_name)}` : 'Unassigned'}</div>
           </div>`;
         }).join('')}
       </div>
@@ -1039,7 +1123,7 @@ function renderDraft() {
       <div class="avatar" style="background:${AVATARCOLORS[idx % AVATARCOLORS.length]}">${escapeHtml(team.participant_name.slice(0,2).toUpperCase())}</div>
       <div>
         <div style="font-weight:500;">${escapeHtml(team.participant_name)}</div>
-        <div class="text-muted">${team.golfers?.length || 0} golfers on team</div>
+        <div class="text-muted">${team.golfers?.length || 0} golfers assigned</div>
       </div>
     </div>
   `).join('');
@@ -1058,7 +1142,7 @@ function renderLeaderboard() {
   if (!contest.teams_generated) {
     pill.textContent = contest.locked ? 'Locked' : 'Entries Open';
     pill.className = 'status-pill ' + (contest.locked ? 'status-upcoming' : 'status-draft');
-    body.innerHTML = '<div class="empty-state">Teams will appear here after generation.</div>';
+    body.innerHTML = '<div class="empty-state">Standings will populate once the commissioner generates the teams.</div>';
     return;
   }
   pill.textContent = 'Live';
@@ -1104,7 +1188,7 @@ function renderLeaderboard() {
         }).join('')}
       </tbody>
     </table>
-    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Placeholder scoring currently uses golfer world-ranking strength. Swap this for real tournament scoring later.</div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Standings currently use placeholder scoring based on world-ranking strength. Swap this for real tournament scoring when you wire in live data.</div>
   `;
 }
 
@@ -1128,7 +1212,7 @@ function loadLiveScores() {
     return;
   }
   const major = getMajorById(contest.major);
-  label.textContent = `${major.name} 2026 · Leaderboard`;
+  label.textContent = `${major.name} 2026 · Course leaderboard`;
   appState.liveScores = generateMockLiveScores();
   body.innerHTML = `
     <table class="live-table">
@@ -1161,7 +1245,7 @@ function loadLiveScores() {
         }).join('')}
       </tbody>
     </table>
-    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Highlighted rows = golfers on team to a fantasy team.</div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Highlighted rows = golfers currently assigned to someone in this pool.</div>
   `;
 }
 
@@ -1175,7 +1259,7 @@ function renderSetup() {
   }
 
   const tiers = buildDynamicTiers(GOLFERS, previewCount);
-  $('admin-tier-preview').innerHTML = !tiers.length ? '<div class="empty-state">At least 2 joined players are needed before the app can split the field into even ranking tiers.</div>' : tiers.map((tier, ti) => `
+  $('admin-tier-preview').innerHTML = !tiers.length ? '<div class="empty-state">At least 2 joined players are needed before the generator can split the field into even ranking tiers.</div>' : tiers.map((tier, ti) => `
     <div style="margin-bottom:14px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
         <span class="tier-badge t${(ti % 4) + 1}">Tier ${ti + 1}</span>
@@ -1194,9 +1278,9 @@ function renderSetup() {
     helper.className = 'text-muted mt-8';
     document.querySelector('#page-setup .card:nth-of-type(2)').appendChild(helper);
   }
-  helper.textContent = !contest ? 'Create the contest first, then share the link.' :
+  helper.textContent = !contest ? 'Create the contest first, then share the link with your group.' :
     isCommissioner() ?
-      (contest.teams_generated ? 'Teams are live. Reset to unlock entries and regenerate from the current participant list.' : contest.locked ? 'Contest is locked. Reset if you need to reopen entries or regenerate the teams.' : 'When everyone has joined, click Generate Teams. The app uses the joined player count to split the field into even ranking tiers automatically.')
+      (contest.teams_generated ? 'Teams are live. Reset to unlock entries and regenerate from the current participant list.' : contest.locked ? 'Contest is locked. Reset if you need to reopen entries or regenerate the teams.' : 'When everyone has joined, click Generate Teams. The app uses the joined player count to split the field into equal ranking tiers and build every roster automatically.')
       : 'Only the commissioner can save settings, generate teams, reset, or delete this contest.';
 }
 
