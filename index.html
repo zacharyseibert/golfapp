@@ -1587,7 +1587,7 @@ async function loadLiveScores() {
   `;
 }
 
-function renderSetup() { {
+function renderSetup() {
   const contest = appState.contest;
   const participants = appState.participants;
   const previewCount = participants.length >= 2 ? participants.length : parseInt($('setup-maxplayers').value || '6', 10);
