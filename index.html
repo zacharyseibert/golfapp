@@ -488,12 +488,12 @@
 <!-- LIVE SCORES -->
 <div class="page" id="page-live">
   <div class="flex items-center justify-between" style="margin-bottom:16px;">
-    <div><div class="section-kicker">Tournament feed</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Tournament Leaderboard</h2></div>
+    <div><div class="section-kicker">Official scoring + pool tracker</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Live Tournament Center</h2></div>
     <button class="btn btn-ghost btn-sm" onclick="loadLiveScores()">↻ Refresh</button>
   </div>
-  <div class="alert alert-info" id="live-tournament-label">Masters Tournament 2026 · Leaderboard</div>
+  <div class="alert alert-info" id="live-tournament-label">Masters Tournament 2026 · Official scoring and fantasy ownership</div>
   <div class="card">
-    <div id="live-scores-body"><div class="empty-state">Loading scores...</div></div>
+    <div id="live-scores-body"><div class="empty-state">Loading tournament center...</div></div>
   </div>
 </div>
 
@@ -729,6 +729,57 @@ function getGolferOwners(golferRank) {
   return appState.teams
     .filter(team => (team.golfers || []).some(g => g.rank === golferRank))
     .map(team => team.participant_name);
+}
+
+function getOfficialLeaderboardConfig(major) {
+  const configs = {
+    masters: {
+      sourceName: 'Masters.com',
+      buttonLabel: 'Open Masters Leaderboard',
+      url: 'https://www.masters.com/en_US/scores/index.html',
+      embedNote: 'For the Masters, this app links out to the official leaderboard instead of embedding scores directly.',
+      availability: 'Official site'
+    },
+    pga: {
+      sourceName: 'PGAChampionship.com',
+      buttonLabel: 'Open PGA Championship Leaderboard',
+      url: 'https://www.pgachampionship.com/leaderboard',
+      embedNote: 'The official championship site publishes the leaderboard before play begins, so your group can always jump straight into the live scoring page.',
+      availability: 'Official site'
+    },
+    usopen: {
+      sourceName: 'USOpen.com',
+      buttonLabel: 'Open U.S. Open Site',
+      url: 'https://www.usopen.com/',
+      embedNote: 'This free version keeps the U.S. Open live experience on the official championship site and uses this app as the fantasy ownership layer.',
+      availability: 'Official site'
+    },
+    open: {
+      sourceName: 'TheOpen.com',
+      buttonLabel: 'Open The Open Leaderboard',
+      url: 'https://www.theopen.com/Leaderboard',
+      embedNote: 'The Open also offers a free official leaderboard widget for websites, so this is the easiest major to upgrade from link-out to embedded scoring later.',
+      availability: 'Free official widget available'
+    }
+  };
+  return configs[major?.id] || configs.masters;
+}
+
+function buildOwnershipRows() {
+  const rows = appState.teams.flatMap(team => (team.golfers || []).map(g => ({
+    ...g,
+    owner: team.participant_name
+  })));
+  return rows.sort((a, b) => a.rank - b.rank || a.owner.localeCompare(b.owner));
+}
+
+function renderTeamLegend() {
+  return appState.teams.map((team, idx) => `
+    <span class="team-legend-chip">
+      <span class="avatar" style="background:${AVATARCOLORS[idx % AVATARCOLORS.length]}">${escapeHtml(team.participant_name.slice(0,2).toUpperCase())}</span>
+      <span><strong>${escapeHtml(team.participant_name)}</strong> · ${(team.golfers || []).length} golfers</span>
+    </span>
+  `).join('');
 }
 
 async function fetchLiveLeaderboard(major) {
@@ -1273,67 +1324,62 @@ async function loadLiveScores() {
 
   const major = getMajorById(contest.major);
   const timing = getMajorTiming(major);
-  label.textContent = `${major.name} 2026 · Tournament leaderboard`;
+  const source = getOfficialLeaderboardConfig(major);
+  label.textContent = `${major.name} 2026 · Official scoring and fantasy ownership`;
 
   if (!contest.teams_generated) {
-    body.innerHTML = '<div class="empty-state">Generate teams first. Once the field is assigned, this page will show every golfer with their pool owner.</div>';
+    body.innerHTML = '<div class="empty-state">Generate teams first. Once the field is assigned, this page becomes your tournament center with official scoring links and a full fantasy ownership tracker.</div>';
     return;
   }
 
-  if (timing.state === 'pre') {
-    body.innerHTML = `<div class="empty-state">
-      <div style="font-size:34px; margin-bottom:10px;">🕒</div>
-      <div style="font-weight:500; margin-bottom:6px;">The tournament has not started yet.</div>
-      <div>Live scores will appear here once ${escapeHtml(major.name)} begins on ${escapeHtml(major.date)}.</div>
-    </div>`;
-    return;
-  }
+  const ownershipRows = buildOwnershipRows();
+  const phaseLabel = timing.state === 'pre' ? 'Tournament not started' : timing.state === 'live' ? 'Tournament live' : 'Tournament complete';
+  const phaseCopy = timing.state === 'pre'
+    ? `Play begins ${escapeHtml(major.date)}. Use the ownership tracker now, then jump to the official leaderboard once the championship starts.`
+    : timing.state === 'live'
+      ? `Use the official leaderboard for scoring, then come back here to see exactly which fantasy owner is attached to every golfer.`
+      : `The championship window has ended. Official scoring will remain on the championship site while this tracker still shows every golfer's pool owner.`;
 
-  let leaderboard = await fetchLiveLeaderboard(major);
-  let usingMockData = false;
-  if (!leaderboard) {
-    leaderboard = generateMockLiveScores();
-    usingMockData = true;
-  }
-
-  appState.liveScores = leaderboard;
   body.innerHTML = `
-    <table class="live-table">
-      <thead>
-        <tr>
-          <th style="width:36px;">Pos</th>
-          <th>Golfer</th>
-          <th style="width:60px;">Total</th>
-          <th style="width:60px;">Today</th>
-          <th style="width:60px; text-align:right;">Thru</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${appState.liveScores.map(g => {
-          const owners = getGolferOwners(g.rank);
-          const totalTxt = g.total === 0 ? 'E' : g.total > 0 ? `+${g.total}` : `${g.total}`;
-          const todayTxt = g.today === 0 ? 'E' : g.today > 0 ? `+${g.today}` : `${g.today}`;
-          const rowCls = owners.length ? 'highlight-row' : '';
-          const totalCls = g.total < 0 ? 'score-under' : g.total > 0 ? 'score-over' : 'score-even';
-          const todayCls = g.today < 0 ? 'score-under' : g.today > 0 ? 'score-over' : 'score-even';
-          return `<tr class="${rowCls}">
-            <td class="live-pos">${g.pos}</td>
-            <td>
-              <div style="font-weight:500;">${escapeHtml(g.name)}</div>
-              <div style="font-size:11px; color:var(--muted);">WR #${g.rank ?? '—'}</div>
-              ${owners.length ? `<div class="owner-list">${owners.map(owner => `<span class="owner-pill">${escapeHtml(owner)}</span>`).join('')}</div>` : '<div style="font-size:11px; color:var(--muted);">Not assigned in this pool</div>'}
-            </td>
-            <td class="${totalCls}">${totalTxt}</td>
-            <td class="${todayCls}">${todayTxt}</td>
-            <td style="text-align:right; color:var(--muted);">${escapeHtml(String(g.thru))}</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-    <div style="margin-top:12px; font-size:11px; color:var(--muted);">
-      ${usingMockData
-        ? 'No live scoring feed is connected yet, so this page is using placeholder scores. Once you wire a real leaderboard API into LIVE_LEADERBOARD_API_URL, this table will switch to live tournament data automatically.'
-        : 'Live tournament data is active. Highlighted rows show golfers assigned to teams in this pool, and the name pills show exactly whose team each golfer is on.'}
+    <div class="live-layout">
+      <div>
+        <div class="source-card">
+          <div class="section-kicker">Official tournament source</div>
+          <h3 style="font-family:'Playfair Display',serif; font-size:22px; margin:4px 0 8px;">${escapeHtml(source.sourceName)}</h3>
+          <p style="font-size:13px; color:var(--text); line-height:1.6;">${escapeHtml(phaseCopy)}</p>
+          <div class="source-meta">
+            <span class="source-pill">${escapeHtml(phaseLabel)}</span>
+            <span class="source-pill">${escapeHtml(source.availability)}</span>
+            <span class="source-pill">${appState.teams.length} fantasy teams</span>
+          </div>
+          <div class="alert alert-info" style="margin-bottom:14px;">${escapeHtml(source.embedNote)}</div>
+          <div class="flex gap-8" style="flex-wrap:wrap;">
+            <a class="btn btn-green" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.buttonLabel)}</a>
+            <button class="btn btn-ghost" onclick="showPage('leaderboard')">View Pool Standings</button>
+          </div>
+          <div class="live-note">This free version does not scrape or mirror live score data inside the app. It keeps official scoring on the event site and makes the fantasy ownership layer obvious here.</div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-title">Fantasy Ownership Tracker</div>
+          <div class="team-legend">${renderTeamLegend()}</div>
+          <div class="tracker-list">
+            ${ownershipRows.map(row => `
+              <div class="tracker-row">
+                <div class="tracker-top">
+                  <div>
+                    <div class="tracker-name">${escapeHtml(row.name)}</div>
+                    <div class="tracker-sub">World ranking #${row.rank} · ${escapeHtml(row.country || '—')} · ${escapeHtml('Tier ' + (Math.floor((row.rank - 1) / appState.participants.length) + 1))}</div>
+                  </div>
+                </div>
+                <div class="owner-list"><span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span></div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="live-note">Tip: keep this page open in one tab and the official leaderboard in another. Your group gets the best free setup without fragile scraping.</div>
+        </div>
+      </div>
     </div>
   `;
 }
