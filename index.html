@@ -3,30 +3,1216 @@
 <html>
 <head>
 <meta charset="UTF-8">
-  <title>Fantasy Golf Pool</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #085041;
+    --gold: #BA7517;
+    --gold-light: #FAEEDA;
+    --amber: #EF9F27;
+    --gray: #5F5E5A;
+    --gray-light: #F1EFE8;
+    --text: #2C2C2A;
+    --muted: #888780;
+    --border: rgba(0,0,0,0.1);
+    --white: #fff;
+    --surface: #f8f7f3;
+    --radius: 10px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+  /* NAV */
+  .nav {
+    background: var(--green-dark);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 52px;
+  }
+  .nav-brand { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+  .nav-sub { font-size: 11px; opacity: 0.6; letter-spacing: 1px; text-transform: uppercase; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    background: none; border: none; color: rgba(255,255,255,0.6);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .nav-tab:hover { color: #fff; background: rgba(255,255,255,0.1); }
+  .nav-tab.active { color: #fff; background: rgba(255,255,255,0.18); }
+  .nav-right { font-size: 12px; opacity: 0.7; }
+
+  /* PAGES */
+  .page { display: none; padding: 24px 20px; max-width: 900px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--white);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; font-weight: 500;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 100%);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    color: #fff;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; right: -30px; top: -30px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+  }
+  .hero h2 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .hero p { opacity: 0.75; font-size: 13px; margin-bottom: 20px; }
+  .hero-meta { display: flex; gap: 20px; font-size: 12px; }
+  .hero-meta span { opacity: 0.7; }
+  .hero-meta strong { opacity: 1; display: block; font-size: 15px; font-weight: 500; margin-top: 2px; }
+
+  /* JOIN FORM */
+  .join-form { display: flex; gap: 10px; margin-top: 6px; }
+  .join-form input {
+    flex: 1; padding: 10px 14px;
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    background: var(--white);
+    color: var(--text);
+  }
+  .join-form input:focus { outline: none; border-color: var(--green); }
+  .btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { background: var(--green-dark); }
+  .btn-ghost { background: transparent; border: 0.5px solid var(--border); color: var(--text); }
+  .btn-ghost:hover { background: var(--gray-light); }
+  .btn-gold { background: var(--gold); color: #fff; }
+  .btn-gold:hover { background: #9a6010; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* PARTICIPANTS */
+  .participant-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .participant-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--gray-light);
+    border-radius: 20px;
+    padding: 5px 12px 5px 6px;
+    font-size: 13px;
+  }
+  .avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500; color: #fff;
+  }
+  .chip-picks { font-size: 11px; color: var(--muted); margin-left: 4px; }
+
+  /* TIER GRID */
+  .tier-section { margin-bottom: 20px; }
+  .tier-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .tier-badge {
+    background: var(--green-dark); color: #fff;
+    font-size: 11px; font-weight: 500;
+    padding: 3px 10px; border-radius: 12px;
+    letter-spacing: 0.5px;
+  }
+  .tier-badge.t2 { background: var(--green); }
+  .tier-badge.t3 { background: var(--gold); }
+  .tier-badge.t4 { background: var(--gray); }
+  .tier-note { font-size: 12px; color: var(--muted); }
+  .golfer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+  .golfer-card {
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    background: var(--white);
+    transition: all 0.15s;
+    position: relative;
+  }
+  .golfer-card:hover:not(.taken):not(.selected) { border-color: var(--green); background: var(--green-light); }
+  .golfer-card.selected { border-color: var(--green); background: var(--green-light); }
+  .golfer-card.taken { opacity: 0.45; cursor: not-allowed; }
+  .golfer-card.my-pick { border-color: var(--gold); background: var(--gold-light); }
+  .golfer-name { font-weight: 500; font-size: 13px; margin-bottom: 2px; }
+  .golfer-rank { font-size: 11px; color: var(--muted); }
+  .pick-owner {
+    font-size: 10px; color: var(--green-dark);
+    margin-top: 4px; font-weight: 500;
+  }
+  .pick-owner.mine { color: var(--gold); }
+
+  /* DRAFT ORDER */
+  .draft-order-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+  }
+  .draft-order-row:last-child { border-bottom: none; }
+  .draft-turn { font-weight: 500; color: var(--green); min-width: 24px; }
+  .draft-current {
+    background: var(--green-light);
+    border-radius: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--green);
+  }
+
+  /* LEADERBOARD */
+  .lb-table { width: 100%; border-collapse: collapse; }
+  .lb-table th {
+    text-align: left; font-size: 11px; font-weight: 500;
+    color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 6px 10px; border-bottom: 0.5px solid var(--border);
+  }
+  .lb-table td { padding: 10px; border-bottom: 0.5px solid var(--border); font-size: 13px; }
+  .lb-table tr:last-child td { border-bottom: none; }
+  .lb-table tr:hover td { background: var(--gray-light); }
+  .pos-badge {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500;
+  }
+  .pos-1 { background: var(--gold-light); color: var(--gold); }
+  .pos-2 { background: #e8e8e8; color: #555; }
+  .pos-3 { background: #f5e8dc; color: #a0522d; }
+  .pos-other { background: var(--gray-light); color: var(--muted); }
+  .score-under { color: var(--green); font-weight: 500; }
+  .score-over { color: #E24B4A; font-weight: 500; }
+  .score-even { color: var(--muted); }
+  .team-golfers { display: flex; flex-wrap: wrap; gap: 4px; }
+  .golfer-pill {
+    font-size: 11px; padding: 2px 8px; border-radius: 12px;
+    background: var(--gray-light); color: var(--text);
+  }
+  .golfer-pill.t1 { background: var(--green-light); color: var(--green-dark); }
+  .golfer-pill.t2 { background: #d4f4e8; color: var(--green); }
+  .golfer-pill.t3 { background: var(--gold-light); color: var(--gold); }
+  .golfer-pill.t4 { background: #eee; color: var(--gray); }
+
+  /* LIVE SCORES TABLE */
+  .live-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .live-table th {
+    text-align: left; font-size: 11px; color: var(--muted);
+    padding: 5px 8px; border-bottom: 0.5px solid var(--border);
+    font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .live-table td { padding: 8px; border-bottom: 0.5px solid var(--border); }
+  .live-table tr:last-child td { border-bottom: none; }
+  .live-pos { font-weight: 500; min-width: 28px; }
+  .highlight-row td { background: var(--green-light) !important; }
+
+  /* SETUP */
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--muted); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-input {
+    width: 100%; padding: 9px 12px;
+    border: 0.5px solid var(--border); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    background: var(--white); color: var(--text);
+  }
+  .form-input:focus { outline: none; border-color: var(--green); }
+  select.form-input { cursor: pointer; }
+
+  /* STATUS badges */
+  .status-pill {
+    display: inline-block; font-size: 11px; font-weight: 500;
+    padding: 3px 10px; border-radius: 12px;
+  }
+  .status-live { background: #fde8e8; color: #c0392b; }
+  .status-upcoming { background: var(--green-light); color: var(--green-dark); }
+  .status-draft { background: var(--gold-light); color: var(--gold); }
+
+  /* ALERT */
+  .alert {
+    padding: 10px 14px; border-radius: 8px;
+    font-size: 13px; margin-bottom: 14px;
+  }
+  .alert-info { background: var(--green-light); color: var(--green-dark); border: 0.5px solid var(--green); }
+  .alert-warn { background: var(--gold-light); color: var(--gold); border: 0.5px solid var(--amber); }
+
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .gap-8 { gap: 8px; }
+  .gap-12 { gap: 12px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .text-muted { color: var(--muted); font-size: 12px; }
+  .text-green { color: var(--green); }
+  .font-500 { font-weight: 500; }
+  .divider { border: none; border-top: 0.5px solid var(--border); margin: 14px 0; }
+  .empty-state { text-align: center; color: var(--muted); padding: 32px; font-size: 13px; }
+  .snake-label { font-size: 11px; color: var(--muted); margin-left: auto; }
+</style>
 </head>
-<body style="font-family:sans-serif; max-width:800px; margin:40px auto;">
-  <h1>⛳ Fantasy Golf Pool</h1>
+<body>
 
-  <div id="setup">
-    <button onclick="createContest()">Create Contest</button>
+<div class="nav">
+  <div>
+    <div class="nav-brand">⛳ Major Fantasy Golf</div>
+    <div class="nav-sub">2026 Season</div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home')">Home</button>
+    <button class="nav-tab" onclick="showPage('draft')">Teams</button>
+    <button class="nav-tab" onclick="showPage('leaderboard')">Leaderboard</button>
+    <button class="nav-tab" onclick="showPage('live')">Live Scores</button>
+    <button class="nav-tab" onclick="showPage('setup')">Setup</button>
+  </div>
+  <div class="nav-right" id="nav-user">Not joined</div>
+</div>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <h2 id="hero-tournament">Masters Tournament 2026</h2>
+    <p id="hero-venue">Augusta National Golf Club · Augusta, GA · Apr 9–12, 2026</p>
+    <div class="hero-meta">
+      <div><span>Status</span><strong id="hero-status">Open for Entries</strong></div>
+      <div><span>Participants</span><strong id="hero-count">0 / 10</strong></div>
+      <div><span>Pool Status</span><strong id="hero-draft">Not Generated</strong></div>
+    </div>
   </div>
 
-  <div id="join" style="margin-top:20px;">
-    <input id="name" placeholder="Your name">
-    <button onclick="join()">Join</button>
+  <div class="card">
+    <div class="card-title">Join Contest</div>
+    <div id="join-section">
+      <div class="join-form">
+        <input type="text" id="join-name" placeholder="Enter your name..." maxlength="24" />
+        <button class="btn btn-green" onclick="joinContest()">Join Contest</button>
+      </div>
+      <p class="text-muted mt-8">Share the contest link. When everyone has joined, the commissioner can lock entries and auto-generate balanced teams.</p>
+    </div>
+    <div id="already-joined" style="display:none;">
+      <div class="alert alert-info">You are joined as <strong id="joined-as-name"></strong>. Head to Teams once the commissioner generates the pool.</div>
+    </div>
   </div>
 
-  <div id="players" style="margin-top:20px;"></div>
-
-  <div style="margin-top:20px;">
-    <button onclick="generate()">Lock + Generate Teams</button>
+  <div class="card">
+    <div class="flex items-center justify-between" style="margin-bottom:14px; padding-bottom:10px; border-bottom: 0.5px solid var(--border);">
+      <span style="font-family:'Playfair Display',serif; font-size:16px; font-weight:500;">Participants</span>
+      <span class="text-muted" id="participant-count-label">0 joined</span>
+    </div>
+    <div class="participant-list" id="participant-list">
+      <div class="empty-state" style="width:100%; padding:16px;">No participants yet — be the first to join!</div>
+    </div>
   </div>
 
-  <div id="teams" style="margin-top:20px;"></div>
+  <div class="card">
+    <div class="card-title">Upcoming Majors</div>
+    <div id="majors-list"></div>
+  </div>
+</div>
+
+<!-- DRAFT PAGE -->
+<div class="page" id="page-draft">
+  <div id="draft-not-started" style="display:none;">
+    <div class="empty-state" style="padding: 60px 20px;">
+      <div style="font-size:40px; margin-bottom:16px;">🏌️</div>
+      <h3 style="font-family:'Playfair Display',serif; font-size:20px; margin-bottom:8px;">Teams have not been generated yet</h3>
+      <p>Wait for the commissioner to lock entries and generate teams, or go to Setup to configure your contest.</p>
+    </div>
+  </div>
+
+  <div id="draft-active">
+    <div class="flex items-center justify-between" style="margin-bottom:16px;">
+      <h2 style="font-family:'Playfair Display',serif; font-size:22px;">Team Draw</h2>
+      <div id="draft-status-badge"></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 240px; gap: 16px;">
+      <div>
+        <div class="card" style="margin-bottom:12px;">
+          <div class="flex items-center justify-between" style="margin-bottom: 10px;">
+            <div id="current-pick-info" style="font-size:13px;"></div>
+            <span class="snake-label">Auto-balanced teams · one golfer per tier</span>
+          </div>
+          <div id="tier-display"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title" style="font-size:14px;">Assigned Teams</div>
+          <div id="draft-order-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="page" id="page-leaderboard">
+  <div class="flex items-center justify-between" style="margin-bottom:16px;">
+    <h2 style="font-family:'Playfair Display',serif; font-size:22px;">Fantasy Leaderboard</h2>
+    <span class="status-pill status-draft" id="lb-status-pill">Entries Open</span>
+  </div>
+  <div class="card">
+    <div id="leaderboard-body"></div>
+  </div>
+</div>
+
+<!-- LIVE SCORES -->
+<div class="page" id="page-live">
+  <div class="flex items-center justify-between" style="margin-bottom:16px;">
+    <h2 style="font-family:'Playfair Display',serif; font-size:22px;">Live Tournament Scores</h2>
+    <button class="btn btn-ghost btn-sm" onclick="loadLiveScores()">↻ Refresh</button>
+  </div>
+  <div class="alert alert-info" id="live-tournament-label">Masters Tournament 2026 · Leaderboard</div>
+  <div class="card">
+    <div id="live-scores-body"><div class="empty-state">Loading scores...</div></div>
+  </div>
+</div>
+
+<!-- SETUP PAGE -->
+<div class="page" id="page-setup">
+  <h2 style="font-family:'Playfair Display',serif; font-size:22px; margin-bottom:16px;">Commissioner Setup</h2>
+  <div class="card">
+    <div class="card-title">Tournament Settings</div>
+    <div class="setup-grid">
+      <div>
+        <div class="form-group">
+          <label class="form-label">Active Major</label>
+          <select class="form-input" id="setup-major">
+            <option value="masters">The Masters (Apr 9–12)</option>
+            <option value="pga">PGA Championship (May 21–24)</option>
+            <option value="usopen">US Open (Jun 18–21)</option>
+            <option value="open">The Open Championship (Jul 16–19)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max Participants</label>
+          <select class="form-input" id="setup-maxplayers">
+            <option value="6">6 players (6 tiers)</option>
+            <option value="7">7 players (7 tiers)</option>
+            <option value="8">8 players (8 tiers)</option>
+            <option value="9">9 players (9 tiers)</option>
+            <option value="10" selected>10 players (10 tiers)</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div class="form-group">
+          <label class="form-label">Picks per Team</label>
+          <select class="form-input" id="setup-picks">
+            <option value="4" selected>4 picks (one per tier group)</option>
+          </select>
+          <p class="text-muted mt-8">Golfers ranked 1–60 are split into dynamic tiers based on the number of joined players. Each participant receives one golfer from every tier.</p>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="saveSettings()">Save Settings</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Draft Controls</div>
+    <div class="flex gap-8" style="flex-wrap:wrap;">
+      <button class="btn btn-green" onclick="startDraft()">Lock + Generate Teams</button>
+      <button class="btn btn-ghost" onclick="resetDraft()">Reset Draft</button>
+      <button class="btn btn-ghost" onclick="clearAll()">Clear All Data</button>
+    </div>
+    <p class="text-muted mt-8">Locking the contest prevents new entries and generates evenly balanced teams from the world ranking tiers. Reset removes generated teams and unlocks entries.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Golfer Pool — World Rankings</div>
+    <p class="text-muted" style="margin-bottom:12px;">Top 60 golfers by world ranking are split into dynamic tiers sized to the number of joined players, so every team gets one golfer from each tier.</p>
+    <div id="admin-tier-preview"></div>
+  </div>
+</div>
 
 <script>
+const MAJORS = [
+  { id: 'masters', name: 'The Masters', venue: 'Augusta National Golf Club', location: 'Augusta, GA', date: 'Apr 9–12, 2026', status: 'upcoming' },
+  { id: 'pga', name: 'PGA Championship', venue: 'Quail Hollow Club', location: 'Charlotte, NC', date: 'May 21–24, 2026', status: 'upcoming' },
+  { id: 'usopen', name: 'US Open', venue: 'Oakmont Country Club', location: 'Oakmont, PA', date: 'Jun 18–21, 2026', status: 'upcoming' },
+  { id: 'open', name: 'The Open Championship', venue: 'Royal Portrush', location: 'Northern Ireland', date: 'Jul 16–19, 2026', status: 'upcoming' },
+];
+
+const GOLFERS = [
+  {rank:1,name:'Scottie Scheffler',country:'USA'},{rank:2,name:'Rory McIlroy',country:'NIR'},
+  {rank:3,name:'Xander Schauffele',country:'USA'},{rank:4,name:'Jon Rahm',country:'ESP'},
+  {rank:5,name:'Collin Morikawa',country:'USA'},{rank:6,name:'Viktor Hovland',country:'NOR'},
+  {rank:7,name:'Ludvig Åberg',country:'SWE'},{rank:8,name:'Patrick Cantlay',country:'USA'},
+  {rank:9,name:'Wyndham Clark',country:'USA'},{rank:10,name:'Brian Harman',country:'USA'},
+  {rank:11,name:'Shane Lowry',country:'IRL'},{rank:12,name:'Russell Henley',country:'USA'},
+  {rank:13,name:'Tommy Fleetwood',country:'ENG'},{rank:14,name:'Tony Finau',country:'USA'},
+  {rank:15,name:'Matt Fitzpatrick',country:'ENG'},{rank:16,name:'Min Woo Lee',country:'AUS'},
+  {rank:17,name:'Cameron Smith',country:'AUS'},{rank:18,name:'Sungjae Im',country:'KOR'},
+  {rank:19,name:'Tom Kim',country:'KOR'},{rank:20,name:'Hideki Matsuyama',country:'JPN'},
+  {rank:21,name:'Sahith Theegala',country:'USA'},{rank:22,name:'Adam Scott',country:'AUS'},
+  {rank:23,name:'Tyrrell Hatton',country:'ENG'},{rank:24,name:'Will Zalatoris',country:'USA'},
+  {rank:25,name:'Si Woo Kim',country:'KOR'},{rank:26,name:'Justin Thomas',country:'USA'},
+  {rank:27,name:'Jordan Spieth',country:'USA'},{rank:28,name:'Sepp Straka',country:'AUT'},
+  {rank:29,name:'Corey Conners',country:'CAN'},{rank:30,name:'Cameron Young',country:'USA'},
+  {rank:31,name:'Billy Horschel',country:'USA'},{rank:32,name:'Ryan Fox',country:'NZL'},
+  {rank:33,name:'Nick Taylor',country:'CAN'},{rank:34,name:'Keith Mitchell',country:'USA'},
+  {rank:35,name:'Max Greyserman',country:'USA'},{rank:36,name:'Jason Day',country:'AUS'},
+  {rank:37,name:'Akshay Bhatia',country:'USA'},{rank:38,name:'Harris English',country:'USA'},
+  {rank:39,name:'Taylor Moore',country:'USA'},{rank:40,name:'Davis Thompson',country:'USA'},
+  {rank:41,name:'Alex Noren',country:'SWE'},{rank:42,name:'Adrian Meronk',country:'POL'},
+  {rank:43,name:'Brendon Todd',country:'USA'},{rank:44,name:'Nick Dunlap',country:'USA'},
+  {rank:45,name:'Maverick McNealy',country:'USA'},{rank:46,name:'Jake Knapp',country:'USA'},
+  {rank:47,name:'Rickie Fowler',country:'USA'},{rank:48,name:'Sam Burns',country:'USA'},
+  {rank:49,name:'Emiliano Grillo',country:'ARG'},{rank:50,name:'Austin Eckroat',country:'USA'},
+  {rank:51,name:'Mark Hubbard',country:'USA'},{rank:52,name:'Joe Highsmith',country:'USA'},
+  {rank:53,name:'Kevin Yu',country:'TPE'},{rank:54,name:'Chez Reavie',country:'USA'},
+  {rank:55,name:'Robby Shelton',country:'USA'},{rank:56,name:'Luke List',country:'USA'},
+  {rank:57,name:'Taylor Pendrith',country:'CAN'},{rank:58,name:'Aaron Rai',country:'ENG'},
+  {rank:59,name:'Byeong Hun An',country:'KOR'},{rank:60,name:'Chris Kirk',country:'USA'},
+];
+
+const AVATARCOLORS = ['#1D9E75','#BA7517','#185FA5','#993556','#533ab7','#3B6D11','#A32D2D','#5F5E5A','#0F6E56','#854F0B'];
+
 const SUPABASE_URL = 'https://orlnitckumvrfuyvietn.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybG5pdGNrdW12cmZ1eXZpZXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1Nzk1MTgsImV4cCI6MjA5MTE1NTUxOH0.Hos6iio6xjzgFGY8klpEwFmFZek622QE3hE3DOhksP8';
-"index.html" 259L, 6389B
+const SUPABASE_ANON_KEY = 'PASTE_YOUR_PUBLISHABLE_KEY_HERE';
+
+if (!window.supabase) {
+  alert('Supabase library not found.');
+  throw new Error('Supabase library missing');
+}
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const appState = {
+  contest: null,
+  participants: [],
+  teams: [],
+  currentUser: localStorage.getItem('golfFan_currentUser') || null,
+  liveScores: []
+};
+
+let activeChannel = null;
+
+function $(id) { return document.getElementById(id); }
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function getContestIdFromURL() {
+  return new URLSearchParams(window.location.search).get('contest');
+}
+
+function setContestIdInURL(contestId) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('contest', contestId);
+  window.history.replaceState({}, '', url.toString());
+}
+
+function generateContestId() {
+  return 'contest-' + Math.random().toString(36).slice(2, 10);
+}
+
+function generateCommissionerKey() {
+  return 'comm-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function getCommissionerKeyStorageKey(contestId) {
+  return `golfFan_commissioner_${contestId}`;
+}
+
+function getCommissionerKey(contestId) {
+  return localStorage.getItem(getCommissionerKeyStorageKey(contestId));
+}
+
+function setCommissionerKey(contestId, key) {
+  localStorage.setItem(getCommissionerKeyStorageKey(contestId), key);
+}
+
+function isCommissioner() {
+  const contestId = getContestIdFromURL();
+  return !!(contestId && appState.contest && getCommissionerKey(contestId) === appState.contest.commissioner_key);
+}
+
+function setCurrentUser(name) {
+  appState.currentUser = name;
+  localStorage.setItem('golfFan_currentUser', name);
+}
+
+function getMajorById(id) {
+  return MAJORS.find(m => m.id === id) || MAJORS[0];
+}
+
+function shuffle(array) {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function buildDynamicTiers(golfers, participantCount) {
+  if (!participantCount || participantCount < 2) return [];
+  const tiers = [];
+  for (let i = 0; i < golfers.length; i += participantCount) {
+    tiers.push(golfers.slice(i, i + participantCount));
+  }
+  return tiers;
+}
+
+function buildTeams(playerNames, golfers) {
+  const participantCount = playerNames.length;
+  if (participantCount < 2) throw new Error('Need at least 2 participants.');
+  const tiers = buildDynamicTiers(golfers, participantCount);
+  const teams = {};
+  playerNames.forEach(name => teams[name] = []);
+  tiers.forEach(tier => {
+    const shuffledTier = shuffle(tier);
+    playerNames.forEach((name, idx) => {
+      if (shuffledTier[idx]) teams[name].push(shuffledTier[idx]);
+    });
+  });
+  return teams;
+}
+
+function calcFantasyScore(golfers) {
+  return (golfers || []).reduce((sum, g) => sum + Math.max(-8, -Math.floor((61 - g.rank) / 9)), 0);
+}
+
+function getTierClass(rank, participantCount) {
+  if (!participantCount) return 't4';
+  const tierIndex = Math.floor((rank - 1) / participantCount) + 1;
+  const mapped = ((tierIndex - 1) % 4) + 1;
+  return 't' + mapped;
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const page = $('page-' + name);
+  if (page) page.classList.add('active');
+  const tabIdx = { home: 0, draft: 1, leaderboard: 2, live: 3, setup: 4 }[name];
+  const tabs = document.querySelectorAll('.nav-tab');
+  if (tabs[tabIdx]) tabs[tabIdx].classList.add('active');
+  if (name === 'home') renderHome();
+  if (name === 'draft') renderDraft();
+  if (name === 'leaderboard') renderLeaderboard();
+  if (name === 'live') loadLiveScores();
+  if (name === 'setup') renderSetup();
+}
+
+async function fetchContest() {
+  const contestId = getContestIdFromURL();
+  if (!contestId) {
+    appState.contest = null;
+    appState.participants = [];
+    appState.teams = [];
+    return;
+  }
+
+  const { data: contest, error: contestError } = await sb
+    .from('contests')
+    .select('*')
+    .eq('id', contestId)
+    .maybeSingle();
+
+  if (contestError) {
+    console.error('contestError', contestError);
+    return;
+  }
+
+  appState.contest = contest || null;
+  if (!contest) {
+    appState.participants = [];
+    appState.teams = [];
+    return;
+  }
+
+  const [{ data: participants, error: participantsError }, { data: teams, error: teamsError }] = await Promise.all([
+    sb.from('participants').select('*').eq('contest_id', contestId).order('created_at', { ascending: true }),
+    sb.from('teams').select('*').eq('contest_id', contestId).order('participant_name', { ascending: true })
+  ]);
+
+  if (participantsError) console.error('participantsError', participantsError);
+  if (teamsError) console.error('teamsError', teamsError);
+  appState.participants = participants || [];
+  appState.teams = teams || [];
+}
+
+function subscribeToContest() {
+  const contestId = getContestIdFromURL();
+  if (activeChannel) {
+    sb.removeChannel(activeChannel);
+    activeChannel = null;
+  }
+  if (!contestId) return;
+
+  activeChannel = sb.channel('contest-room-' + contestId)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'contests', filter: `id=eq.${contestId}` }, async () => {
+      await fetchContest();
+      rerenderAll();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'participants', filter: `contest_id=eq.${contestId}` }, async () => {
+      await fetchContest();
+      rerenderAll();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'teams', filter: `contest_id=eq.${contestId}` }, async () => {
+      await fetchContest();
+      rerenderAll();
+    })
+    .subscribe();
+}
+
+function rerenderAll() {
+  renderHome();
+  renderDraft();
+  renderLeaderboard();
+  renderSetup();
+}
+
+async function saveSettings() {
+  const major = $('setup-major').value;
+  const maxPlayers = parseInt($('setup-maxplayers').value, 10);
+  let contestId = getContestIdFromURL();
+
+  if (!contestId) {
+    contestId = generateContestId();
+    const commissionerKey = generateCommissionerKey();
+    const payload = {
+      id: contestId,
+      name: `${getMajorById(major).name} Pool`,
+      major,
+      max_players: maxPlayers,
+      locked: false,
+      teams_generated: false,
+      commissioner_key: commissionerKey,
+    };
+    const { error } = await sb.from('contests').insert(payload);
+    if (error) {
+      console.error(error);
+      alert('Could not create contest. Check your key and table schema.');
+      return;
+    }
+    setCommissionerKey(contestId, commissionerKey);
+    setContestIdInURL(contestId);
+    subscribeToContest();
+    await fetchContest();
+    rerenderAll();
+    alert(`Contest created.
+
+Share this link:
+${window.location.href}`);
+    return;
+  }
+
+  if (!isCommissioner()) {
+    alert('Only the commissioner can change settings.');
+    return;
+  }
+  if (appState.contest?.locked) {
+    alert('Contest is locked. Reset it before changing settings.');
+    return;
+  }
+
+  const { error } = await sb.from('contests').update({
+    major,
+    max_players: maxPlayers,
+    name: `${getMajorById(major).name} Pool`
+  }).eq('id', contestId).eq('commissioner_key', getCommissionerKey(contestId));
+
+  if (error) {
+    console.error(error);
+    alert('Could not save settings.');
+    return;
+  }
+
+  await fetchContest();
+  rerenderAll();
+  alert('Settings saved.');
+}
+
+async function joinContest() {
+  const contestId = getContestIdFromURL();
+  if (!contestId) {
+    alert('The commissioner needs to create a contest first from Setup.');
+    return;
+  }
+  if (!appState.contest) {
+    alert('Contest not found.');
+    return;
+  }
+  if (appState.contest.locked) {
+    alert('Contest is locked. No more entries are allowed.');
+    return;
+  }
+  const name = $('join-name').value.trim();
+  if (!name) {
+    alert('Enter your name.');
+    return;
+  }
+  if (name.length > 24) {
+    alert('Name must be 24 characters or less.');
+    return;
+  }
+  if (appState.participants.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+    alert('That name is already taken.');
+    return;
+  }
+  if (appState.participants.length >= appState.contest.max_players) {
+    alert('Contest is full.');
+    return;
+  }
+
+  const { error } = await sb.from('participants').insert({ contest_id: contestId, name });
+  if (error) {
+    console.error(error);
+    alert('Could not join contest.');
+    return;
+  }
+  setCurrentUser(name);
+  $('join-name').value = '';
+  await fetchContest();
+  rerenderAll();
+}
+
+async function startDraft() {
+  const contestId = getContestIdFromURL();
+  if (!contestId || !appState.contest) {
+    alert('Create a contest first.');
+    return;
+  }
+  if (!isCommissioner()) {
+    alert('Only the commissioner can lock entries and generate teams.');
+    return;
+  }
+  if (appState.contest.teams_generated) {
+    alert('Teams have already been generated. Reset the contest to run it again.');
+    return;
+  }
+  const participantNames = appState.participants.map(p => p.name);
+  if (participantNames.length < 2) {
+    alert('Need at least 2 participants.');
+    return;
+  }
+  const teamsMap = buildTeams(participantNames, GOLFERS);
+  const teamRows = participantNames.map(name => ({
+    contest_id: contestId,
+    participant_name: name,
+    golfers: teamsMap[name],
+  }));
+  const commissionerKey = getCommissionerKey(contestId);
+
+  const { error: contestError } = await sb.from('contests').update({ locked: true, teams_generated: true })
+    .eq('id', contestId).eq('commissioner_key', commissionerKey);
+  if (contestError) {
+    console.error(contestError);
+    alert('Could not lock contest.');
+    return;
+  }
+
+  const { error: deleteError } = await sb.from('teams').delete().eq('contest_id', contestId);
+  if (deleteError) {
+    console.error(deleteError);
+    alert('Could not clear existing teams.');
+    return;
+  }
+
+  const { error: insertError } = await sb.from('teams').insert(teamRows);
+  if (insertError) {
+    console.error(insertError);
+    alert('Could not generate teams.');
+    return;
+  }
+
+  await fetchContest();
+  rerenderAll();
+  showPage('draft');
+  alert('Entries locked and teams generated.');
+}
+
+async function resetDraft() {
+  const contestId = getContestIdFromURL();
+  if (!contestId || !appState.contest) {
+    alert('No contest loaded.');
+    return;
+  }
+  if (!isCommissioner()) {
+    alert('Only the commissioner can reset this contest.');
+    return;
+  }
+  if (!confirm('This will unlock the contest and delete all generated teams. Continue?')) return;
+  const commissionerKey = getCommissionerKey(contestId);
+
+  const { error: teamsError } = await sb.from('teams').delete().eq('contest_id', contestId);
+  if (teamsError) {
+    console.error(teamsError);
+    alert('Could not delete teams.');
+    return;
+  }
+
+  const { error: contestError } = await sb.from('contests').update({ locked: false, teams_generated: false })
+    .eq('id', contestId).eq('commissioner_key', commissionerKey);
+  if (contestError) {
+    console.error(contestError);
+    alert('Could not reset contest.');
+    return;
+  }
+
+  await fetchContest();
+  rerenderAll();
+  alert('Contest reset.');
+}
+
+async function clearAll() {
+  const contestId = getContestIdFromURL();
+  if (!contestId || !appState.contest) {
+    if (confirm('No live contest is loaded. Clear your saved local name and reload?')) {
+      localStorage.removeItem('golfFan_currentUser');
+      location.href = location.pathname;
+    }
+    return;
+  }
+  if (!isCommissioner()) {
+    alert('Only the commissioner can delete the contest.');
+    return;
+  }
+  if (!confirm('Delete this entire contest, all participants, and all teams? This cannot be undone.')) return;
+  const commissionerKey = getCommissionerKey(contestId);
+
+  await sb.from('teams').delete().eq('contest_id', contestId);
+  await sb.from('participants').delete().eq('contest_id', contestId);
+  const { error } = await sb.from('contests').delete().eq('id', contestId).eq('commissioner_key', commissionerKey);
+  if (error) {
+    console.error(error);
+    alert('Could not delete contest.');
+    return;
+  }
+  localStorage.removeItem(getCommissionerKeyStorageKey(contestId));
+  location.href = location.pathname;
+}
+
+function renderHome() {
+  const contest = appState.contest;
+  const participants = appState.participants;
+  const currentUser = appState.currentUser;
+  $('nav-user').textContent = currentUser ? `👤 ${currentUser}` : 'Not joined';
+
+  if (!contest) {
+    $('hero-tournament').textContent = 'Create a Contest';
+    $('hero-venue').textContent = 'Head to Setup to create a pool, then share the link so others can join.';
+    $('hero-count').textContent = '0 / 0';
+    $('hero-status').textContent = 'Not Created';
+    $('hero-draft').textContent = 'Waiting';
+    $('participant-count-label').textContent = '0 joined';
+    $('participant-list').innerHTML = '<div class="empty-state" style="width:100%; padding:16px;">No contest yet. Go to Setup and create one.</div>';
+    $('join-section').style.display = 'block';
+    $('already-joined').style.display = 'none';
+  } else {
+    const major = getMajorById(contest.major);
+    $('hero-tournament').textContent = `${major.name} 2026`;
+    $('hero-venue').textContent = `${major.venue} · ${major.location} · ${major.date}`;
+    $('hero-count').textContent = `${participants.length} / ${contest.max_players}`;
+    $('hero-status').textContent = contest.teams_generated ? 'Live' : contest.locked ? 'Locked' : 'Open';
+    $('hero-draft').textContent = contest.teams_generated ? 'Teams Generated' : contest.locked ? 'Locked' : 'Open for Entries';
+
+    const joinedMatch = currentUser ? participants.find(p => p.name.toLowerCase() === currentUser.toLowerCase()) : null;
+    if (joinedMatch) {
+      $('join-section').style.display = 'none';
+      $('already-joined').style.display = 'block';
+      $('joined-as-name').textContent = joinedMatch.name;
+    } else {
+      $('join-section').style.display = contest.locked ? 'none' : 'block';
+      $('already-joined').style.display = 'none';
+    }
+
+    if (!participants.length) {
+      $('participant-list').innerHTML = '<div class="empty-state" style="width:100%; padding:16px;">No participants yet — be the first to join!</div>';
+    } else {
+      $('participant-list').innerHTML = participants.map((p, i) => {
+        const team = appState.teams.find(t => t.participant_name === p.name);
+        const golferCount = team?.golfers?.length || 0;
+        return `<div class="participant-chip">
+          <div class="avatar" style="background:${AVATARCOLORS[i % AVATARCOLORS.length]}">${escapeHtml(p.name.slice(0,2).toUpperCase())}</div>
+          <span>${escapeHtml(p.name)}</span>
+          <span class="chip-picks">${golferCount} golfers</span>
+        </div>`;
+      }).join('');
+    }
+    $('participant-count-label').textContent = `${participants.length} joined`;
+  }
+
+  $('majors-list').innerHTML = MAJORS.map((m, i) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding: 10px 0; border-bottom: 0.5px solid var(--border); ${i===MAJORS.length-1?'border-bottom:none':''}" >
+      <div>
+        <div style="font-weight:500; font-size:13px;">${m.name}</div>
+        <div style="font-size:11px; color:var(--muted);">${m.date} · ${m.venue}</div>
+      </div>
+      <span class="status-pill ${(contest && m.id === contest.major) ? 'status-live' : 'status-upcoming'}">${(contest && m.id === contest.major) ? 'Active' : 'Upcoming'}</span>
+    </div>
+  `).join('');
+}
+
+function renderDraft() {
+  const contest = appState.contest;
+  const participants = appState.participants;
+  const teams = appState.teams;
+
+  if (!contest) {
+    $('draft-not-started').style.display = 'block';
+    $('draft-active').style.display = 'none';
+    return;
+  }
+
+  if (!contest.teams_generated) {
+    $('draft-not-started').style.display = 'block';
+    $('draft-active').style.display = 'none';
+    return;
+  }
+
+  $('draft-not-started').style.display = 'none';
+  $('draft-active').style.display = 'block';
+  $('draft-status-badge').innerHTML = '<span class="status-pill status-live">Teams Generated</span>';
+  $('current-pick-info').innerHTML = `<strong>${participants.length}</strong> players · <strong>${teams.length}</strong> completed teams`;
+
+  const tiers = buildDynamicTiers(GOLFERS, participants.length);
+  $('tier-display').innerHTML = tiers.map((tier, idx) => `
+    <div class="tier-section">
+      <div class="tier-header">
+        <span class="tier-badge t${(idx % 4) + 1}">Tier ${idx + 1}</span>
+        <span class="tier-note">World ranking #${tier[0]?.rank}–#${tier[tier.length - 1]?.rank}</span>
+      </div>
+      <div class="golfer-grid">
+        ${tier.map(g => {
+          const owner = teams.find(t => (t.golfers || []).some(x => x.rank === g.rank));
+          const mine = owner && appState.currentUser && owner.participant_name.toLowerCase() === appState.currentUser.toLowerCase();
+          return `<div class="golfer-card ${mine ? 'my-pick' : 'taken'}">
+            <div class="golfer-name">${escapeHtml(g.name)}</div>
+            <div class="golfer-rank">WR #${g.rank} · ${escapeHtml(g.country)}</div>
+            <div class="pick-owner ${mine ? 'mine' : ''}">${owner ? `Assigned to ${escapeHtml(owner.participant_name)}` : 'Unassigned'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  $('draft-order-list').innerHTML = teams.map((team, idx) => `
+    <div class="draft-order-row ${appState.currentUser && team.participant_name.toLowerCase() === appState.currentUser.toLowerCase() ? 'draft-current' : ''}">
+      <div class="draft-turn">${idx + 1}</div>
+      <div class="avatar" style="background:${AVATARCOLORS[idx % AVATARCOLORS.length]}">${escapeHtml(team.participant_name.slice(0,2).toUpperCase())}</div>
+      <div>
+        <div style="font-weight:500;">${escapeHtml(team.participant_name)}</div>
+        <div class="text-muted">${team.golfers?.length || 0} golfers assigned</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderLeaderboard() {
+  const body = $('leaderboard-body');
+  const pill = $('lb-status-pill');
+  const contest = appState.contest;
+  if (!contest) {
+    pill.textContent = 'No Contest';
+    pill.className = 'status-pill status-draft';
+    body.innerHTML = '<div class="empty-state">Create a contest first.</div>';
+    return;
+  }
+  if (!contest.teams_generated) {
+    pill.textContent = contest.locked ? 'Locked' : 'Entries Open';
+    pill.className = 'status-pill ' + (contest.locked ? 'status-upcoming' : 'status-draft');
+    body.innerHTML = '<div class="empty-state">Teams will appear here after generation.</div>';
+    return;
+  }
+  pill.textContent = 'Live';
+  pill.className = 'status-pill status-live';
+
+  const scored = appState.teams.map((team, idx) => ({
+    name: team.participant_name,
+    golfers: team.golfers || [],
+    score: calcFantasyScore(team.golfers || []),
+    colorIdx: idx,
+  })).sort((a, b) => a.score - b.score);
+
+  body.innerHTML = `
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th style="width:40px;">Pos</th>
+          <th>Player</th>
+          <th>Team</th>
+          <th style="text-align:right;">Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${scored.map((p, i) => {
+          const posCls = i === 0 ? 'pos-1' : i === 1 ? 'pos-2' : i === 2 ? 'pos-3' : 'pos-other';
+          const scoreTxt = p.score === 0 ? 'E' : p.score > 0 ? `+${p.score}` : `${p.score}`;
+          const scoreCls = p.score < 0 ? 'score-under' : p.score > 0 ? 'score-over' : 'score-even';
+          return `<tr>
+            <td><span class="pos-badge ${posCls}">${i + 1}</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="avatar" style="background:${AVATARCOLORS[p.colorIdx % AVATARCOLORS.length]};width:30px;height:30px;font-size:11px;">${escapeHtml(p.name.slice(0,2).toUpperCase())}</div>
+                <span style="font-weight:500;">${escapeHtml(p.name)}</span>
+              </div>
+            </td>
+            <td>
+              <div class="team-golfers">
+                ${p.golfers.map(g => `<span class="golfer-pill ${getTierClass(g.rank, appState.participants.length)}">${escapeHtml(g.name)}</span>`).join('')}
+              </div>
+            </td>
+            <td style="text-align:right;" class="${scoreCls}">${scoreTxt}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Placeholder scoring currently uses golfer world-ranking strength. Swap this for real tournament scoring later.</div>
+  `;
+}
+
+function generateMockLiveScores() {
+  const draftedRanks = new Set(appState.teams.flatMap(t => (t.golfers || []).map(g => g.rank)));
+  return GOLFERS.slice(0, 25).map((g, idx) => {
+    const today = ((idx % 7) - 3);
+    const total = Math.max(-10, Math.min(6, Math.floor((g.rank - 1) / 8) - 5 + today));
+    const thru = idx < 4 ? 'F' : `${Math.min(18, 5 + idx % 14)}`;
+    return { ...g, total, today, thru, drafted: draftedRanks.has(g.rank) };
+  }).sort((a, b) => a.total - b.total || a.rank - b.rank).map((g, i) => ({ ...g, pos: i + 1 }));
+}
+
+function loadLiveScores() {
+  const contest = appState.contest;
+  const body = $('live-scores-body');
+  const label = $('live-tournament-label');
+  if (!contest) {
+    label.textContent = 'No contest loaded';
+    body.innerHTML = '<div class="empty-state">Create or open a contest first.</div>';
+    return;
+  }
+  const major = getMajorById(contest.major);
+  label.textContent = `${major.name} 2026 · Leaderboard`;
+  appState.liveScores = generateMockLiveScores();
+  body.innerHTML = `
+    <table class="live-table">
+      <thead>
+        <tr>
+          <th style="width:36px;">Pos</th>
+          <th>Golfer</th>
+          <th style="width:60px;">Total</th>
+          <th style="width:60px;">Today</th>
+          <th style="width:60px; text-align:right;">Thru</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${appState.liveScores.map(g => {
+          const totalTxt = g.total === 0 ? 'E' : g.total > 0 ? `+${g.total}` : `${g.total}`;
+          const todayTxt = g.today === 0 ? 'E' : g.today > 0 ? `+${g.today}` : `${g.today}`;
+          const rowCls = g.drafted ? 'highlight-row' : '';
+          const totalCls = g.total < 0 ? 'score-under' : g.total > 0 ? 'score-over' : 'score-even';
+          const todayCls = g.today < 0 ? 'score-under' : g.today > 0 ? 'score-over' : 'score-even';
+          return `<tr class="${rowCls}">
+            <td class="live-pos">${g.pos}</td>
+            <td>
+              <div style="font-weight:500;">${escapeHtml(g.name)}</div>
+              <div style="font-size:11px; color:var(--muted);">WR #${g.rank}</div>
+            </td>
+            <td class="${totalCls}">${totalTxt}</td>
+            <td class="${todayCls}">${todayTxt}</td>
+            <td style="text-align:right; color:var(--muted);">${g.thru}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Highlighted rows = golfers assigned to a fantasy team.</div>
+  `;
+}
+
+function renderSetup() {
+  const contest = appState.contest;
+  const participants = appState.participants;
+  const previewCount = participants.length >= 2 ? participants.length : parseInt($('setup-maxplayers').value || '10', 10);
+  if (contest) {
+    $('setup-major').value = contest.major || 'masters';
+    $('setup-maxplayers').value = String(contest.max_players || 10);
+  }
+
+  const tiers = buildDynamicTiers(GOLFERS, previewCount);
+  $('admin-tier-preview').innerHTML = !tiers.length ? '<div class="empty-state">At least 2 joined players are needed to build even tiers.</div>' : tiers.map((tier, ti) => `
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span class="tier-badge t${(ti % 4) + 1}">Tier ${ti + 1}</span>
+        <span class="tier-note">WR #${tier[0].rank}–${tier[tier.length - 1].rank} · ${tier.length} golfers</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${tier.map(g => `<span style="font-size:12px;padding:3px 9px;background:var(--gray-light);border-radius:12px;color:var(--text);">#${g.rank} ${escapeHtml(g.name)}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  let helper = $('commissioner-helper');
+  if (!helper) {
+    helper = document.createElement('p');
+    helper.id = 'commissioner-helper';
+    helper.className = 'text-muted mt-8';
+    document.querySelector('#page-setup .card:nth-of-type(2)').appendChild(helper);
+  }
+  helper.textContent = !contest ? 'Create the contest first, then share the link.' :
+    isCommissioner() ?
+      (contest.teams_generated ? 'Contest is live. Reset to unlock entries and regenerate.' : contest.locked ? 'Contest is locked. Reset if you need to change anything.' : 'When everyone has joined, click Lock + Generate Teams.')
+      : 'Only the commissioner can save settings, generate teams, reset, or delete this contest.';
+}
+
+async function initApp() {
+  const contestId = getContestIdFromURL();
+  if (contestId) {
+    subscribeToContest();
+    await fetchContest();
+  }
+  renderHome();
+  renderDraft();
+  renderLeaderboard();
+  renderSetup();
+}
+
+initApp();
+</script>
+</body>
+</html>
