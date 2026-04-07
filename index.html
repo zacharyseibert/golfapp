@@ -317,6 +317,20 @@
   .section-kicker {
     font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px;
   }
+
+  .owner-list { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .owner-pill {
+    font-size: 10px; padding: 2px 7px; border-radius: 999px;
+    background: var(--gold-light); color: var(--gold); font-weight: 500;
+  }
+  .control-lockup { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .commissioner-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:500; color:var(--green-dark);
+    background:var(--green-light); border:1px solid var(--green);
+    border-radius:999px; padding:5px 10px;
+  }
+
   @media (max-width: 760px) {
     .nav { height: auto; padding: 14px 16px; gap: 12px; flex-wrap: wrap; }
     .nav-tabs { width: 100%; overflow-x: auto; padding-bottom: 2px; }
@@ -474,7 +488,7 @@
 <!-- LIVE SCORES -->
 <div class="page" id="page-live">
   <div class="flex items-center justify-between" style="margin-bottom:16px;">
-    <div><div class="section-kicker">Tournament feed</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Course Leaderboard</h2></div>
+    <div><div class="section-kicker">Tournament feed</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Tournament Leaderboard</h2></div>
     <button class="btn btn-ghost btn-sm" onclick="loadLiveScores()">↻ Refresh</button>
   </div>
   <div class="alert alert-info" id="live-tournament-label">Masters Tournament 2026 · Leaderboard</div>
@@ -485,7 +499,7 @@
 
 <!-- SETUP PAGE -->
 <div class="page" id="page-setup">
-  <div class="section-header"><div><div class="section-kicker">Contest admin</div><h2 style="font-family:'Playfair Display',serif; font-size:22px; margin-bottom:0;">Commissioner Console</h2></div><div class="text-muted">Create, lock, reset, and preview team generation.</div></div>
+  <div class="section-header"><div><div class="section-kicker">Contest admin</div><h2 style="font-family:'Playfair Display',serif; font-size:22px; margin-bottom:0;">Commissioner Console</h2></div><div class="text-muted">Create, lock, reset, and preview team generation. Only the commissioner can run the generator.</div></div>
   <div class="card">
     <div class="card-title">Tournament Settings</div>
     <div class="setup-grid">
@@ -524,11 +538,14 @@
   </div>
 
   <div class="card">
-    <div class="card-title">Contest Controls</div>
-    <div class="flex gap-8" style="flex-wrap:wrap;">
-      <button class="btn btn-green" onclick="startDraft()">Generate Teams</button>
-      <button class="btn btn-ghost" onclick="resetDraft()">Reset Contest</button>
-      <button class="btn btn-ghost" onclick="clearAll()">Clear All Data</button>
+    <div class="control-lockup" style="margin-bottom:12px;">
+      <div class="card-title" style="margin-bottom:0; padding-bottom:0; border-bottom:none;">Contest Controls</div>
+      <div id="commissioner-status-badge" class="commissioner-badge">Commissioner-only controls</div>
+    </div>
+    <div class="flex gap-8" style="flex-wrap:wrap;" id="commissioner-control-buttons">
+      <button class="btn btn-green" id="btn-generate-teams" onclick="startDraft()">Generate Teams</button>
+      <button class="btn btn-ghost" id="btn-reset-contest" onclick="resetDraft()">Reset Contest</button>
+      <button class="btn btn-ghost" id="btn-clear-data" onclick="clearAll()">Clear All Data</button>
     </div>
     <p class="text-muted mt-8">Generate Teams locks new entries and builds every roster from equal ranking tiers. Reset removes the generated teams and opens the contest again.</p>
   </div>
@@ -542,10 +559,10 @@
 
 <script>
 const MAJORS = [
-  { id: 'masters', name: 'The Masters', venue: 'Augusta National Golf Club', location: 'Augusta, GA', date: 'Apr 9–12, 2026', status: 'upcoming' },
-  { id: 'pga', name: 'PGA Championship', venue: 'Quail Hollow Club', location: 'Charlotte, NC', date: 'May 21–24, 2026', status: 'upcoming' },
-  { id: 'usopen', name: 'US Open', venue: 'Oakmont Country Club', location: 'Oakmont, PA', date: 'Jun 18–21, 2026', status: 'upcoming' },
-  { id: 'open', name: 'The Open Championship', venue: 'Royal Portrush', location: 'Northern Ireland', date: 'Jul 16–19, 2026', status: 'upcoming' },
+  { id: 'masters', name: 'The Masters', venue: 'Augusta National Golf Club', location: 'Augusta, GA', date: 'Apr 9–12, 2026', startDate: '2026-04-09', endDate: '2026-04-12', status: 'upcoming' },
+  { id: 'pga', name: 'PGA Championship', venue: 'Quail Hollow Club', location: 'Charlotte, NC', date: 'May 21–24, 2026', startDate: '2026-05-21', endDate: '2026-05-24', status: 'upcoming' },
+  { id: 'usopen', name: 'US Open', venue: 'Oakmont Country Club', location: 'Oakmont, PA', date: 'Jun 18–21, 2026', startDate: '2026-06-18', endDate: '2026-06-21', status: 'upcoming' },
+  { id: 'open', name: 'The Open Championship', venue: 'Royal Portrush', location: 'Northern Ireland', date: 'Jul 16–19, 2026', startDate: '2026-07-16', endDate: '2026-07-19', status: 'upcoming' },
 ];
 
 const GOLFERS = [
@@ -585,6 +602,8 @@ const AVATARCOLORS = ['#1D9E75','#BA7517','#185FA5','#993556','#533ab7','#3B6D11
 
 const SUPABASE_URL = 'https://orlnitckumvrfuyvietn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybG5pdGNrdW12cmZ1eXZpZXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1Nzk1MTgsImV4cCI6MjA5MTE1NTUxOH0.Hos6iio6xjzgFGY8klpEwFmFZek622QE3hE3DOhksP8';
+const LIVE_LEADERBOARD_API_URL = '';
+const LIVE_LEADERBOARD_API_KEY = '';
 
 if (!window.supabase) {
   alert('Supabase library not found.');
@@ -696,6 +715,46 @@ function getTierClass(rank, participantCount) {
   const mapped = ((tierIndex - 1) % 4) + 1;
   return 't' + mapped;
 }
+function getMajorTiming(major) {
+  if (!major?.startDate || !major?.endDate) return { state: 'unknown' };
+  const now = new Date();
+  const start = new Date(`${major.startDate}T00:00:00`);
+  const end = new Date(`${major.endDate}T23:59:59`);
+  if (now < start) return { state: 'pre', start, end };
+  if (now > end) return { state: 'post', start, end };
+  return { state: 'live', start, end };
+}
+
+function getGolferOwners(golferRank) {
+  return appState.teams
+    .filter(team => (team.golfers || []).some(g => g.rank === golferRank))
+    .map(team => team.participant_name);
+}
+
+async function fetchLiveLeaderboard(major) {
+  if (!LIVE_LEADERBOARD_API_URL) return null;
+  try {
+    const url = new URL(LIVE_LEADERBOARD_API_URL);
+    url.searchParams.set('major', major.id);
+    const headers = LIVE_LEADERBOARD_API_KEY ? { 'x-api-key': LIVE_LEADERBOARD_API_KEY } : {};
+    const response = await fetch(url.toString(), { headers });
+    if (!response.ok) throw new Error(`Live leaderboard request failed: ${response.status}`);
+    const payload = await response.json();
+    if (!Array.isArray(payload)) return null;
+    return payload.map((row, idx) => ({
+      pos: row.pos ?? idx + 1,
+      name: row.name ?? row.player_name ?? '',
+      rank: row.rank ?? row.world_rank ?? null,
+      total: row.total ?? row.score ?? 0,
+      today: row.today ?? row.round_score ?? 0,
+      thru: row.thru ?? row.hole ?? row.status ?? '-'
+    }));
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
 
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1188,21 +1247,21 @@ function renderLeaderboard() {
         }).join('')}
       </tbody>
     </table>
-    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Standings currently use placeholder scoring based on world-ranking strength. Swap this for real tournament scoring when you wire in live data.</div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Standings show each player's full roster. Scoring is still placeholder world-ranking scoring until you connect a real live leaderboard feed.</div>
   `;
 }
 
 function generateMockLiveScores() {
-  const draftedRanks = new Set(appState.teams.flatMap(t => (t.golfers || []).map(g => g.rank)));
+  const assignedRanks = new Set(appState.teams.flatMap(t => (t.golfers || []).map(g => g.rank)));
   return GOLFERS.slice(0, 25).map((g, idx) => {
     const today = ((idx % 7) - 3);
     const total = Math.max(-10, Math.min(6, Math.floor((g.rank - 1) / 8) - 5 + today));
     const thru = idx < 4 ? 'F' : `${Math.min(18, 5 + idx % 14)}`;
-    return { ...g, total, today, thru, drafted: draftedRanks.has(g.rank) };
+    return { ...g, total, today, thru, drafted: assignedRanks.has(g.rank) };
   }).sort((a, b) => a.total - b.total || a.rank - b.rank).map((g, i) => ({ ...g, pos: i + 1 }));
 }
 
-function loadLiveScores() {
+async function loadLiveScores() {
   const contest = appState.contest;
   const body = $('live-scores-body');
   const label = $('live-tournament-label');
@@ -1211,9 +1270,33 @@ function loadLiveScores() {
     body.innerHTML = '<div class="empty-state">Create or open a contest first.</div>';
     return;
   }
+
   const major = getMajorById(contest.major);
-  label.textContent = `${major.name} 2026 · Course leaderboard`;
-  appState.liveScores = generateMockLiveScores();
+  const timing = getMajorTiming(major);
+  label.textContent = `${major.name} 2026 · Tournament leaderboard`;
+
+  if (!contest.teams_generated) {
+    body.innerHTML = '<div class="empty-state">Generate teams first. Once the field is assigned, this page will show every golfer with their pool owner.</div>';
+    return;
+  }
+
+  if (timing.state === 'pre') {
+    body.innerHTML = `<div class="empty-state">
+      <div style="font-size:34px; margin-bottom:10px;">🕒</div>
+      <div style="font-weight:500; margin-bottom:6px;">The tournament has not started yet.</div>
+      <div>Live scores will appear here once ${escapeHtml(major.name)} begins on ${escapeHtml(major.date)}.</div>
+    </div>`;
+    return;
+  }
+
+  let leaderboard = await fetchLiveLeaderboard(major);
+  let usingMockData = false;
+  if (!leaderboard) {
+    leaderboard = generateMockLiveScores();
+    usingMockData = true;
+  }
+
+  appState.liveScores = leaderboard;
   body.innerHTML = `
     <table class="live-table">
       <thead>
@@ -1227,25 +1310,31 @@ function loadLiveScores() {
       </thead>
       <tbody>
         ${appState.liveScores.map(g => {
+          const owners = getGolferOwners(g.rank);
           const totalTxt = g.total === 0 ? 'E' : g.total > 0 ? `+${g.total}` : `${g.total}`;
           const todayTxt = g.today === 0 ? 'E' : g.today > 0 ? `+${g.today}` : `${g.today}`;
-          const rowCls = g.drafted ? 'highlight-row' : '';
+          const rowCls = owners.length ? 'highlight-row' : '';
           const totalCls = g.total < 0 ? 'score-under' : g.total > 0 ? 'score-over' : 'score-even';
           const todayCls = g.today < 0 ? 'score-under' : g.today > 0 ? 'score-over' : 'score-even';
           return `<tr class="${rowCls}">
             <td class="live-pos">${g.pos}</td>
             <td>
               <div style="font-weight:500;">${escapeHtml(g.name)}</div>
-              <div style="font-size:11px; color:var(--muted);">WR #${g.rank}</div>
+              <div style="font-size:11px; color:var(--muted);">WR #${g.rank ?? '—'}</div>
+              ${owners.length ? `<div class="owner-list">${owners.map(owner => `<span class="owner-pill">${escapeHtml(owner)}</span>`).join('')}</div>` : '<div style="font-size:11px; color:var(--muted);">Not assigned in this pool</div>'}
             </td>
             <td class="${totalCls}">${totalTxt}</td>
             <td class="${todayCls}">${todayTxt}</td>
-            <td style="text-align:right; color:var(--muted);">${g.thru}</td>
+            <td style="text-align:right; color:var(--muted);">${escapeHtml(String(g.thru))}</td>
           </tr>`;
         }).join('')}
       </tbody>
     </table>
-    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Highlighted rows = golfers currently assigned to someone in this pool.</div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted);">
+      ${usingMockData
+        ? 'No live scoring feed is connected yet, so this page is using placeholder scores. Once you wire a real leaderboard API into LIVE_LEADERBOARD_API_URL, this table will switch to live tournament data automatically.'
+        : 'Live tournament data is active. Highlighted rows show golfers assigned to teams in this pool, and the name pills show exactly whose team each golfer is on.'}
+    </div>
   `;
 }
 
@@ -1271,6 +1360,20 @@ function renderSetup() {
     </div>
   `).join('');
 
+  const commissioner = !!contest && isCommissioner();
+  const badge = $('commissioner-status-badge');
+  const generateBtn = $('btn-generate-teams');
+  const resetBtn = $('btn-reset-contest');
+  const clearBtn = $('btn-clear-data');
+  if (badge) {
+    badge.textContent = commissioner ? 'You are the commissioner on this device' : 'Commissioner-only controls';
+  }
+  [generateBtn, resetBtn, clearBtn].forEach(btn => {
+    if (!btn) return;
+    btn.disabled = !commissioner;
+    btn.title = commissioner ? '' : 'Only the commissioner can use this control on the browser that created the contest.';
+  });
+
   let helper = $('commissioner-helper');
   if (!helper) {
     helper = document.createElement('p');
@@ -1279,9 +1382,9 @@ function renderSetup() {
     document.querySelector('#page-setup .card:nth-of-type(2)').appendChild(helper);
   }
   helper.textContent = !contest ? 'Create the contest first, then share the link with your group.' :
-    isCommissioner() ?
+    commissioner ?
       (contest.teams_generated ? 'Teams are live. Reset to unlock entries and regenerate from the current participant list.' : contest.locked ? 'Contest is locked. Reset if you need to reopen entries or regenerate the teams.' : 'When everyone has joined, click Generate Teams. The app uses the joined player count to split the field into equal ranking tiers and build every roster automatically.')
-      : 'Only the commissioner can save settings, generate teams, reset, or delete this contest.';
+      : 'Only the commissioner can save settings, generate teams, reset, or delete this contest from the browser that created it.';
 }
 
 async function initApp() {
