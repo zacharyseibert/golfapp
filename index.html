@@ -730,15 +730,29 @@ function buildDynamicTiers(golfers, participantCount) {
 function buildTeams(playerNames, golfers) {
   const participantCount = playerNames.length;
   if (participantCount < 2) throw new Error('Need at least 2 participants.');
-  const tiers = buildDynamicTiers(golfers, participantCount);
+
+  const baseTeamSize = Math.floor(golfers.length / participantCount);
+  const usableCount = baseTeamSize * participantCount;
+
+  const usableGolfers = golfers.slice(0, usableCount);
+  const leftovers = golfers.slice(usableCount);
+
+  const tiers = buildDynamicTiers(usableGolfers, participantCount);
+
   const teams = {};
   playerNames.forEach(name => teams[name] = []);
+
   tiers.forEach(tier => {
     const shuffledTier = shuffle(tier);
     playerNames.forEach((name, idx) => {
       if (shuffledTier[idx]) teams[name].push(shuffledTier[idx]);
     });
   });
+
+  if (leftovers.length) {
+    teams['Grandma'] = leftovers;
+  }
+
   return teams;
 }
 
@@ -1124,11 +1138,11 @@ async function startDraft() {
     return;
   }
   const teamsMap = buildTeams(participantNames, GOLFERS);
-  const teamRows = participantNames.map(name => ({
-    contest_id: contestId,
-    participant_name: name,
-    golfers: teamsMap[name],
-  }));
+  const teamRows = Object.keys(teamsMap).map(name => ({
+  contest_id: contestId,
+  participant_name: name,
+  golfers: teamsMap[name],
+}));
   const commissionerKey = getCommissionerKey(contestId);
 
   const { error: contestError } = await sb.from('contests').update({ locked: true, teams_generated: true })
@@ -1312,7 +1326,12 @@ function renderDraft() {
   $('draft-not-started').style.display = 'none';
   $('draft-active').style.display = 'block';
   $('draft-status-badge').innerHTML = '<span class="status-pill status-live">Teams Ready</span>';
-  $('current-pick-info').innerHTML = `<strong>${participants.length}</strong> entries · <strong>${teams.length}</strong> balanced rosters generated`;
+  const grandmaTeam = teams.find(t => t.participant_name === 'Grandma');
+$('current-pick-info').innerHTML = `
+  <strong>${participants.length}</strong> entries ·
+  <strong>${teams.length}</strong> total teams
+  ${grandmaTeam ? ` · <strong>${grandmaTeam.golfers?.length || 0}</strong> leftover golfer(s) assigned to Grandma` : ''}
+`;
 
   const tiers = buildDynamicTiers(GOLFERS, participants.length);
   $('tier-display').innerHTML = tiers.map((tier, idx) => `
