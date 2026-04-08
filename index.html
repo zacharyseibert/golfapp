@@ -859,7 +859,11 @@ async function invokeRefreshLiveScores() {
     }
 
     await loadLiveScores();
-    alert(`Live scores refreshed${payload.inserted ? ` (${payload.inserted} golfers).` : '.'}`);
+    if (!payload.inserted) {
+  alert("No leaderboard data available yet.");
+} else {
+  alert(`Live scores refreshed (${payload.inserted} golfers).`);
+}
   } catch (err) {
     console.error(err);
     alert(err.message || 'Could not refresh live scores.');
