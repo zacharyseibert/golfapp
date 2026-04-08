@@ -3,6 +3,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<title>Major Fantasy Golf</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap');
@@ -329,6 +330,34 @@
     font-size:11px; font-weight:500; color:var(--green-dark);
     background:var(--green-light); border:1px solid var(--green);
     border-radius:999px; padding:5px 10px;
+  }
+
+
+  .live-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 16px; }
+  .source-card {
+    background: var(--white);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .source-meta, .team-legend { display:flex; flex-wrap:wrap; gap:8px; }
+  .source-meta { margin: 10px 0 14px; }
+  .source-pill, .team-legend-chip {
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:11px; font-weight:500;
+    border-radius:999px; padding:6px 10px;
+    background: var(--gray-light); color: var(--text);
+  }
+  .tracker-list { display:grid; gap:10px; margin-top:14px; max-height:560px; overflow:auto; }
+  .tracker-row { border-top:0.5px solid var(--border); padding-top:10px; }
+  .tracker-row:first-child { border-top:none; padding-top:0; }
+  .tracker-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .tracker-name { font-weight:500; }
+  .tracker-sub, .live-note { font-size:11px; color: var(--muted); }
+  .live-note { margin-top:12px; }
+
+  @media (max-width: 860px) {
+    .live-layout { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 760px) {
@@ -860,10 +889,12 @@ async function invokeRefreshLiveScores() {
 
     await loadLiveScores();
     if (!payload.inserted) {
-  alert("No leaderboard data available yet.");
-} else {
-  alert(`Live scores refreshed (${payload.inserted} golfers).`);
-}
+      alert('No leaderboard or tee-time data was available yet.');
+    } else if (payload.mode === 'field') {
+      alert(`Tournament field refreshed (${payload.inserted} golfers).`);
+    } else {
+      alert(`Live leaderboard refreshed (${payload.inserted} golfers).`);
+    }
   } catch (err) {
     console.error(err);
     alert(err.message || 'Could not refresh live scores.');
@@ -883,31 +914,6 @@ function renderTeamLegend() {
     </span>
   `).join('');
 }
-
-async function fetchLiveLeaderboard(major) {
-  if (!LIVE_LEADERBOARD_API_URL) return null;
-  try {
-    const url = new URL(LIVE_LEADERBOARD_API_URL);
-    url.searchParams.set('major', major.id);
-    const headers = LIVE_LEADERBOARD_API_KEY ? { 'x-api-key': LIVE_LEADERBOARD_API_KEY } : {};
-    const response = await fetch(url.toString(), { headers });
-    if (!response.ok) throw new Error(`Live leaderboard request failed: ${response.status}`);
-    const payload = await response.json();
-    if (!Array.isArray(payload)) return null;
-    return payload.map((row, idx) => ({
-      pos: row.pos ?? idx + 1,
-      name: row.name ?? row.player_name ?? '',
-      rank: row.rank ?? row.world_rank ?? null,
-      total: row.total ?? row.score ?? 0,
-      today: row.today ?? row.round_score ?? 0,
-      thru: row.thru ?? row.hole ?? row.status ?? '-'
-    }));
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}
-
 
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1437,7 +1443,7 @@ async function loadLiveScores() {
   label.textContent = `${major.name} 2026 · Live leaderboard and fantasy ownership`;
 
   if (!contest.teams_generated) {
-    body.innerHTML = '<div class="empty-state">Generate teams first. Once the field is assigned, this page will show the live leaderboard beside the fantasy ownership mapping.</div>';
+    body.innerHTML = '<div class="empty-state">Generate teams first. Once the field is assigned, this page will show the tournament field, tee times, or live leaderboard beside the fantasy ownership mapping.</div>';
     return;
   }
 
@@ -1451,18 +1457,19 @@ async function loadLiveScores() {
 
   if (error) {
     console.error(error);
-    body.innerHTML = '<div class="empty-state">Could not load live scores. Make sure the <strong>live_scores</strong> table exists and try again.</div>';
+    body.innerHTML = '<div class="empty-state">Could not load live scores. Make sure the <strong>live_scores</strong> table exists and includes <strong>row_type</strong> and <strong>tee_time_text</strong>.</div>';
     return;
   }
 
   const ownerLookup = buildOwnerLookup();
   const ownershipRows = buildOwnershipRows();
   const updatedAt = data && data.length ? new Date(data[0].updated_at || Date.now()) : null;
+  const isFieldMode = !!(data && data.length && data[0].row_type === 'field');
 
   if (!data || !data.length) {
     const preCopy = timing.state === 'pre'
-      ? `The championship has not started yet. When play begins, the commissioner can click <strong>Refresh Live Scores</strong> to pull the latest leaderboard.`
-      : `No scraped leaderboard rows are stored yet. Click <strong>Refresh Live Scores</strong> to run the Edge Function, or use the official site while you finish setup.`;
+      ? `The championship has not started yet. The commissioner can click <strong>Refresh Live Scores</strong> to try pulling the tournament field and tee times before play begins.`
+      : `No scraped rows are stored yet. Click <strong>Refresh Live Scores</strong> to run the Edge Function, or use the official site while you finish setup.`;
 
     body.innerHTML = `
       <div class="live-layout">
@@ -1472,10 +1479,10 @@ async function loadLiveScores() {
             <h3 style="font-family:'Playfair Display',serif; font-size:22px; margin:4px 0 8px;">${escapeHtml(source.sourceName)}</h3>
             <p style="font-size:13px; color:var(--text); line-height:1.6;">${preCopy}</p>
             <div class="source-meta">
-              <span class="source-pill">${escapeHtml(timing.state === 'pre' ? 'Tournament not started' : timing.state === 'live' ? 'Live window' : 'Post-event')}</span>
+              <span class="source-pill">${escapeHtml(timing.state === 'pre' ? 'Pre-tournament window' : timing.state === 'live' ? 'Live window' : 'Post-event')}</span>
               <span class="source-pill">${appState.teams.length} fantasy teams</span>
             </div>
-            <div class="alert alert-info" style="margin-bottom:14px;">Use the Edge Function refresh to scrape the current leaderboard into Supabase, then this page will overlay fantasy ownership automatically.</div>
+            <div class="alert alert-info" style="margin-bottom:14px;">The Edge Function should scrape field / tee times before play starts, then switch to leaderboard rows once scoring begins.</div>
             <div class="flex gap-8" style="flex-wrap:wrap;">
               <a class="btn btn-green" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.buttonLabel)}</a>
               <button class="btn btn-ghost" onclick="showPage('leaderboard')">View Pool Standings</button>
@@ -1516,6 +1523,72 @@ async function loadLiveScores() {
       isTracked: !!owner
     };
   });
+
+  if (isFieldMode) {
+    body.innerHTML = `
+      <div class="live-layout">
+        <div>
+          <div class="card" style="margin-bottom:0;">
+            <div class="flex items-center justify-between" style="margin-bottom:14px; gap:10px; flex-wrap:wrap;">
+              <div>
+                <div class="section-kicker">Pre-tournament field</div>
+                <h3 style="font-family:'Playfair Display',serif; font-size:22px;">${escapeHtml(major.name)} Field & Tee Times</h3>
+              </div>
+              <div class="source-meta">
+                <span class="source-pill">${rows.length} golfers</span>
+                <span class="source-pill">${updatedAt ? `Updated ${updatedAt.toLocaleString()}` : 'Updated just now'}</span>
+              </div>
+            </div>
+            <table class="live-table">
+              <thead>
+                <tr>
+                  <th>Golfer</th>
+                  <th style="width:110px;">Tee Time</th>
+                  <th style="width:140px;">On Team</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(row => `
+                  <tr class="${row.isTracked ? 'highlight-row' : ''}">
+                    <td>
+                      <div style="font-weight:500;">${escapeHtml(row.golfer_name)}</div>
+                      <div style="font-size:11px; color:var(--muted);">${row.rank ? `Pool golfer · WR #${row.rank}` : 'Not on a fantasy team'}</div>
+                    </td>
+                    <td>${escapeHtml(row.tee_time_text || '-')}</td>
+                    <td>${row.owner ? `<span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span>` : '<span class="text-muted">—</span>'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="live-note">Before play starts, this page shows the tournament field and tee times. Once scoring begins, the scraper should switch to leaderboard mode automatically.</div>
+            <div class="mt-16">
+              <a class="btn btn-ghost btn-sm" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.buttonLabel)}</a>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-title">Fantasy Ownership Tracker</div>
+            <div class="team-legend">${renderTeamLegend()}</div>
+            <div class="tracker-list">
+              ${rows.filter(r => r.isTracked).map(row => `
+                <div class="tracker-row">
+                  <div class="tracker-top">
+                    <div>
+                      <div class="tracker-name">${escapeHtml(row.golfer_name)}</div>
+                      <div class="tracker-sub">${escapeHtml((row.tee_time_text || '-') + ' tee time')}</div>
+                    </div>
+                  </div>
+                  <div class="owner-list"><span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span></div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
 
   body.innerHTML = `
     <div class="live-layout">
