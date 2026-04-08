@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -37,7 +36,6 @@
 
   h1, h2, h3 { font-family: 'Playfair Display', serif; }
 
-  /* NAV */
   .nav {
     background: var(--green-dark);
     color: #fff;
@@ -60,11 +58,9 @@
   .nav-tab.active { color: #fff; background: rgba(255,255,255,0.18); }
   .nav-right { font-size: 12px; opacity: 0.7; }
 
-  /* PAGES */
   .page { display: none; padding: 24px 20px; max-width: 900px; margin: 0 auto; }
   .page.active { display: block; }
 
-  /* CARDS */
   .card {
     background: var(--white);
     border: 0.5px solid var(--border);
@@ -80,7 +76,6 @@
     border-bottom: 0.5px solid var(--border);
   }
 
-  /* HERO */
   .hero {
     background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 100%);
     border-radius: var(--radius);
@@ -99,11 +94,10 @@
   }
   .hero h2 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
   .hero p { opacity: 0.75; font-size: 13px; margin-bottom: 20px; }
-  .hero-meta { display: flex; gap: 20px; font-size: 12px; }
+  .hero-meta { display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap; }
   .hero-meta span { opacity: 0.7; }
   .hero-meta strong { opacity: 1; display: block; font-size: 15px; font-weight: 500; margin-top: 2px; }
 
-  /* JOIN FORM */
   .join-form { display: flex; gap: 10px; margin-top: 6px; }
   .join-form input {
     flex: 1; padding: 10px 14px;
@@ -114,7 +108,7 @@
     background: var(--white);
     color: var(--text);
   }
-  .join-form input:focus { outline: none; border-color: var(--green); }
+  .join-form input:focus, .form-input:focus, .field-import-text:focus { outline: none; border-color: var(--green); }
   .btn {
     padding: 10px 18px;
     border-radius: 8px;
@@ -134,7 +128,6 @@
   .btn-sm { padding: 6px 12px; font-size: 12px; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* PARTICIPANTS */
   .participant-list { display: flex; flex-wrap: wrap; gap: 8px; }
   .participant-chip {
     display: flex; align-items: center; gap: 8px;
@@ -150,11 +143,10 @@
   }
   .chip-picks { font-size: 11px; color: var(--muted); margin-left: 4px; }
 
-  /* TIER GRID */
   .tier-section { margin-bottom: 20px; }
   .tier-header {
     display: flex; align-items: center; gap: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 10px; flex-wrap: wrap;
   }
   .tier-badge {
     background: var(--green-dark); color: #fff;
@@ -171,15 +163,13 @@
     border: 0.5px solid var(--border);
     border-radius: 8px;
     padding: 10px 12px;
-    cursor: pointer;
     background: var(--white);
     transition: all 0.15s;
     position: relative;
   }
-  .golfer-card:hover:not(.taken):not(.selected) { border-color: var(--green); background: var(--green-light); }
-  .golfer-card.selected { border-color: var(--green); background: var(--green-light); }
-  .golfer-card.taken { opacity: 0.45; cursor: not-allowed; }
+  .golfer-card.taken { opacity: 0.95; }
   .golfer-card.my-pick { border-color: var(--gold); background: var(--gold-light); }
+  .golfer-card.grandma-pick { border-color: var(--gray); background: #f6f5f2; }
   .golfer-name { font-weight: 500; font-size: 13px; margin-bottom: 2px; }
   .golfer-rank { font-size: 11px; color: var(--muted); }
   .pick-owner {
@@ -187,8 +177,8 @@
     margin-top: 4px; font-weight: 500;
   }
   .pick-owner.mine { color: var(--gold); }
+  .pick-owner.grandma { color: var(--gray); }
 
-  /* DRAFT ORDER */
   .draft-order-row {
     display: flex; align-items: center; gap: 10px;
     padding: 8px 0;
@@ -204,7 +194,6 @@
     border: 1px solid var(--green);
   }
 
-  /* LEADERBOARD */
   .lb-table { width: 100%; border-collapse: collapse; }
   .lb-table th {
     text-align: left; font-size: 11px; font-weight: 500;
@@ -236,7 +225,6 @@
   .golfer-pill.t3 { background: var(--gold-light); color: var(--gold); }
   .golfer-pill.t4 { background: #eee; color: var(--gray); }
 
-  /* LIVE SCORES TABLE */
   .live-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .live-table th {
     text-align: left; font-size: 11px; color: var(--muted);
@@ -248,7 +236,6 @@
   .live-pos { font-weight: 500; min-width: 28px; }
   .highlight-row td { background: var(--green-light) !important; }
 
-  /* SETUP */
   .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .form-group { margin-bottom: 14px; }
   .form-label { font-size: 12px; font-weight: 500; color: var(--muted); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -258,10 +245,21 @@
     font-family: 'DM Sans', sans-serif; font-size: 13px;
     background: var(--white); color: var(--text);
   }
-  .form-input:focus { outline: none; border-color: var(--green); }
+  .field-import-text {
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    padding: 10px 12px;
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: var(--white);
+    color: var(--text);
+    line-height: 1.5;
+  }
   select.form-input { cursor: pointer; }
 
-  /* STATUS badges */
   .status-pill {
     display: inline-block; font-size: 11px; font-weight: 500;
     padding: 3px 10px; border-radius: 12px;
@@ -270,14 +268,12 @@
   .status-upcoming { background: var(--green-light); color: var(--green-dark); }
   .status-draft { background: var(--gold-light); color: var(--gold); }
 
-  /* ALERT */
   .alert {
     padding: 10px 14px; border-radius: 8px;
     font-size: 13px; margin-bottom: 14px;
   }
   .alert-info { background: var(--green-light); color: var(--green-dark); border: 0.5px solid var(--green); }
   .alert-warn { background: var(--gold-light); color: var(--gold); border: 0.5px solid var(--amber); }
-
 
   .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
   .summary-card {
@@ -295,12 +291,8 @@
     font-family: 'Playfair Display', serif;
     font-size: 22px; line-height: 1.1;
   }
-  .summary-sub {
-    font-size: 12px; color: var(--muted); margin-top: 4px;
-  }
-  .info-list {
-    display: grid; gap: 10px; margin-top: 10px;
-  }
+  .summary-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .info-list { display: grid; gap: 10px; margin-top: 10px; }
   .info-item {
     display: flex; gap: 10px; align-items: flex-start;
     padding: 10px 0; border-bottom: 0.5px solid var(--border);
@@ -314,6 +306,7 @@
   }
   .section-header {
     display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+    gap: 12px; flex-wrap: wrap;
   }
   .section-kicker {
     font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px;
@@ -331,7 +324,6 @@
     background:var(--green-light); border:1px solid var(--green);
     border-radius:999px; padding:5px 10px;
   }
-
 
   .live-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 16px; }
   .source-card {
@@ -398,7 +390,6 @@
   <div class="nav-right" id="nav-user">Not joined</div>
 </div>
 
-<!-- HOME PAGE -->
 <div class="page active" id="page-home">
   <div class="hero">
     <h2 id="hero-tournament">Masters Tournament 2026</h2>
@@ -414,17 +405,17 @@
     <div class="summary-card">
       <div class="summary-label">Format</div>
       <div class="summary-value">Auto-balanced</div>
-      <div class="summary-sub">No draft, no manual picks, no stacked teams.</div>
+      <div class="summary-sub">Real entrant teams stay even. Leftovers go to Grandma.</div>
     </div>
     <div class="summary-card">
-      <div class="summary-label">Tiers</div>
+      <div class="summary-label">Field</div>
       <div class="summary-value" id="summary-tier-count">—</div>
-      <div class="summary-sub" id="summary-tier-note">Generated from the number of joined players.</div>
+      <div class="summary-sub" id="summary-tier-note">Import the actual field in Setup.</div>
     </div>
     <div class="summary-card">
       <div class="summary-label">Team Size</div>
       <div class="summary-value" id="summary-team-size">—</div>
-      <div class="summary-sub" id="summary-team-note">Every team gets one golfer from each ranking tier.</div>
+      <div class="summary-sub" id="summary-team-note">Even teams for entrants. Grandma gets leftovers.</div>
     </div>
   </div>
 
@@ -432,8 +423,8 @@
     <div class="card-title">How It Works</div>
     <div class="info-list">
       <div class="info-item"><span class="info-icon">1</span><div><div class="font-500">Share one link</div><div class="text-muted">Create the contest once, then send the contest URL to everyone joining the pool.</div></div></div>
-      <div class="info-item"><span class="info-icon">2</span><div><div class="font-500">Fill the field</div><div class="text-muted">When the participant list is set, the commissioner locks entries and runs the team generator.</div></div></div>
-      <div class="info-item"><span class="info-icon">3</span><div><div class="font-500">Balance every roster</div><div class="text-muted">The field is split into equal ranking tiers based on the number of entries, and each team gets one golfer from every tier.</div></div></div>
+      <div class="info-item"><span class="info-icon">2</span><div><div class="font-500">Import the real field</div><div class="text-muted">Paste the actual tournament field in Setup. That imported list becomes the source of truth.</div></div></div>
+      <div class="info-item"><span class="info-icon">3</span><div><div class="font-500">Generate fair teams</div><div class="text-muted">Every entrant gets an even team. Any leftover golfers go to Grandma as a real extra team.</div></div></div>
     </div>
   </div>
 
@@ -444,7 +435,7 @@
         <input type="text" id="join-name" placeholder="Enter your name..." maxlength="24" />
         <button class="btn btn-green" onclick="joinContest()">Join Contest</button>
       </div>
-      <p class="text-muted mt-8">Share the contest link, collect entries, then generate balanced teams in one click.</p>
+      <p class="text-muted mt-8">Share the contest link, collect entries, import the field, then generate teams in one click.</p>
     </div>
     <div id="already-joined" style="display:none;">
       <div class="alert alert-info">You are joined as <strong id="joined-as-name"></strong>. You’re in. Come back to Team Assignments once the commissioner generates the field.</div>
@@ -467,13 +458,12 @@
   </div>
 </div>
 
-<!-- DRAFT PAGE -->
 <div class="page" id="page-draft">
   <div id="draft-not-started" style="display:none;">
     <div class="empty-state" style="padding: 60px 20px;">
       <div style="font-size:40px; margin-bottom:16px;">🏌️</div>
       <h3 style="font-family:'Playfair Display',serif; font-size:20px; margin-bottom:8px;">Teams have not been generated yet</h3>
-      <p>Once entries are locked, the generator builds every roster automatically from the ranking tiers.</p>
+      <p>Import the real field and collect entries, then generate teams. Grandma will receive any leftovers.</p>
     </div>
   </div>
 
@@ -488,7 +478,7 @@
         <div class="card" style="margin-bottom:12px;">
           <div class="flex items-center justify-between" style="margin-bottom: 10px;">
             <div id="current-pick-info" style="font-size:13px;"></div>
-            <span class="snake-label">Auto-balanced teams · one golfer per tier</span>
+            <span class="snake-label">Even entrant teams · leftovers go to Grandma</span>
           </div>
           <div id="tier-display"></div>
         </div>
@@ -503,7 +493,6 @@
   </div>
 </div>
 
-<!-- LEADERBOARD -->
 <div class="page" id="page-leaderboard">
   <div class="flex items-center justify-between" style="margin-bottom:16px;">
     <div><div class="section-kicker">Projected results</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Pool Standings</h2></div>
@@ -514,7 +503,6 @@
   </div>
 </div>
 
-<!-- LIVE SCORES -->
 <div class="page" id="page-live">
   <div class="flex items-center justify-between" style="margin-bottom:16px; gap:12px; flex-wrap:wrap;">
     <div><div class="section-kicker">Live leaderboard + pool tracker</div><h2 style="font-family:'Playfair Display',serif; font-size:22px;">Live Tournament Center</h2></div>
@@ -529,9 +517,9 @@
   </div>
 </div>
 
-<!-- SETUP PAGE -->
 <div class="page" id="page-setup">
-  <div class="section-header"><div><div class="section-kicker">Contest admin</div><h2 style="font-family:'Playfair Display',serif; font-size:22px; margin-bottom:0;">Commissioner Console</h2></div><div class="text-muted">Create, lock, reset, and preview team generation. Only the commissioner can run the generator.</div></div>
+  <div class="section-header"><div><div class="section-kicker">Contest admin</div><h2 style="font-family:'Playfair Display',serif; font-size:22px; margin-bottom:0;">Commissioner Console</h2></div><div class="text-muted">Create, import field, lock, reset, and preview team generation. Only the commissioner can run the generator.</div></div>
+
   <div class="card">
     <div class="card-title">Tournament Settings</div>
     <div class="setup-grid">
@@ -548,11 +536,12 @@
         <div class="form-group">
           <label class="form-label">Max Participants</label>
           <select class="form-input" id="setup-maxplayers">
-            <option value="6">6 players (10 golfers per team)</option>
-            <option value="7">7 players (about 8–9 golfers per team)</option>
-            <option value="8">8 players (about 7–8 golfers per team)</option>
-            <option value="9">9 players (about 6–7 golfers per team)</option>
-            <option value="10" selected>10 players (6 golfers per team)</option>
+            <option value="6">6 players</option>
+            <option value="7">7 players</option>
+            <option value="8">8 players</option>
+            <option value="9">9 players</option>
+            <option value="10" selected>10 players</option>
+            <option value="12">12 players</option>
           </select>
         </div>
       </div>
@@ -560,13 +549,24 @@
         <div class="form-group">
           <label class="form-label">Team Generation</label>
           <div class="form-input" style="background:var(--gray-light); border-style:dashed; line-height:1.5;">
-            Teams are generated automatically from the number of joined players.
+            Teams are generated from the imported field. All real entrants stay even. Leftovers go to Grandma.
           </div>
-          <p class="text-muted mt-8">Example: if 6 people join a 60-golfer contest, the app creates 10 ranking tiers of 6 golfers each, then gives every team 1 golfer from each tier for 10 golfers total.</p>
+          <p class="text-muted mt-8">Example: if 91 golfers are in the field and 6 people join, the app creates 6 even teams of 15 golfers and assigns the 1 leftover golfer to Grandma.</p>
         </div>
       </div>
     </div>
     <button class="btn btn-ghost btn-sm" onclick="saveSettings()">Save Settings</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Import Real Field</div>
+    <p class="text-muted" style="margin-bottom:12px;">Paste one golfer per line. Accepted formats: <strong>Rory McIlroy</strong>, <strong>1, Rory McIlroy, NIR</strong>, or <strong>Rory McIlroy | NIR</strong>.</p>
+    <textarea id="field-import-text" class="field-import-text" placeholder="Scottie Scheffler&#10;Rory McIlroy&#10;Jon Rahm&#10;..."></textarea>
+    <div class="flex gap-8 mt-8" style="flex-wrap:wrap;">
+      <button class="btn btn-green" onclick="importField()">Import Field</button>
+      <button class="btn btn-ghost" onclick="clearField()">Clear Field</button>
+    </div>
+    <p class="text-muted mt-8" id="field-import-status">No field imported yet.</p>
   </div>
 
   <div class="card">
@@ -579,12 +579,12 @@
       <button class="btn btn-ghost" id="btn-reset-contest" onclick="resetDraft()">Reset Contest</button>
       <button class="btn btn-ghost" id="btn-clear-data" onclick="clearAll()">Clear All Data</button>
     </div>
-    <p class="text-muted mt-8">Generate Teams locks new entries and builds every roster from equal ranking tiers. Reset removes the generated teams and opens the contest again.</p>
+    <p class="text-muted mt-8">Generate Teams locks new entries and builds every roster from the imported field. Reset removes the generated teams and opens the contest again.</p>
   </div>
 
   <div class="card">
-    <div class="card-title">Golfer Pool — World Rankings</div>
-    <p class="text-muted" style="margin-bottom:12px;">The top 60 golfers are split into ranking tiers sized to the number of joined players, so every roster gets one golfer from each tier.</p>
+    <div class="card-title">Field Preview</div>
+    <p class="text-muted" style="margin-bottom:12px;">This preview uses the imported field stored in . It is the source of truth for team generation.</p>
     <div id="admin-tier-preview"></div>
   </div>
 </div>
@@ -595,39 +595,6 @@ const MAJORS = [
   { id: 'pga', name: 'PGA Championship', venue: 'Quail Hollow Club', location: 'Charlotte, NC', date: 'May 21–24, 2026', startDate: '2026-05-21', endDate: '2026-05-24', status: 'upcoming' },
   { id: 'usopen', name: 'US Open', venue: 'Oakmont Country Club', location: 'Oakmont, PA', date: 'Jun 18–21, 2026', startDate: '2026-06-18', endDate: '2026-06-21', status: 'upcoming' },
   { id: 'open', name: 'The Open Championship', venue: 'Royal Portrush', location: 'Northern Ireland', date: 'Jul 16–19, 2026', startDate: '2026-07-16', endDate: '2026-07-19', status: 'upcoming' },
-];
-
-const GOLFERS = [
-  {rank:1,name:'Scottie Scheffler',country:'USA'},{rank:2,name:'Rory McIlroy',country:'NIR'},
-  {rank:3,name:'Xander Schauffele',country:'USA'},{rank:4,name:'Jon Rahm',country:'ESP'},
-  {rank:5,name:'Collin Morikawa',country:'USA'},{rank:6,name:'Viktor Hovland',country:'NOR'},
-  {rank:7,name:'Ludvig Åberg',country:'SWE'},{rank:8,name:'Patrick Cantlay',country:'USA'},
-  {rank:9,name:'Wyndham Clark',country:'USA'},{rank:10,name:'Brian Harman',country:'USA'},
-  {rank:11,name:'Shane Lowry',country:'IRL'},{rank:12,name:'Russell Henley',country:'USA'},
-  {rank:13,name:'Tommy Fleetwood',country:'ENG'},{rank:14,name:'Tony Finau',country:'USA'},
-  {rank:15,name:'Matt Fitzpatrick',country:'ENG'},{rank:16,name:'Min Woo Lee',country:'AUS'},
-  {rank:17,name:'Cameron Smith',country:'AUS'},{rank:18,name:'Sungjae Im',country:'KOR'},
-  {rank:19,name:'Tom Kim',country:'KOR'},{rank:20,name:'Hideki Matsuyama',country:'JPN'},
-  {rank:21,name:'Sahith Theegala',country:'USA'},{rank:22,name:'Adam Scott',country:'AUS'},
-  {rank:23,name:'Tyrrell Hatton',country:'ENG'},{rank:24,name:'Will Zalatoris',country:'USA'},
-  {rank:25,name:'Si Woo Kim',country:'KOR'},{rank:26,name:'Justin Thomas',country:'USA'},
-  {rank:27,name:'Jordan Spieth',country:'USA'},{rank:28,name:'Sepp Straka',country:'AUT'},
-  {rank:29,name:'Corey Conners',country:'CAN'},{rank:30,name:'Cameron Young',country:'USA'},
-  {rank:31,name:'Billy Horschel',country:'USA'},{rank:32,name:'Ryan Fox',country:'NZL'},
-  {rank:33,name:'Nick Taylor',country:'CAN'},{rank:34,name:'Keith Mitchell',country:'USA'},
-  {rank:35,name:'Max Greyserman',country:'USA'},{rank:36,name:'Jason Day',country:'AUS'},
-  {rank:37,name:'Akshay Bhatia',country:'USA'},{rank:38,name:'Harris English',country:'USA'},
-  {rank:39,name:'Taylor Moore',country:'USA'},{rank:40,name:'Davis Thompson',country:'USA'},
-  {rank:41,name:'Alex Noren',country:'SWE'},{rank:42,name:'Adrian Meronk',country:'POL'},
-  {rank:43,name:'Brendon Todd',country:'USA'},{rank:44,name:'Nick Dunlap',country:'USA'},
-  {rank:45,name:'Maverick McNealy',country:'USA'},{rank:46,name:'Jake Knapp',country:'USA'},
-  {rank:47,name:'Rickie Fowler',country:'USA'},{rank:48,name:'Sam Burns',country:'USA'},
-  {rank:49,name:'Emiliano Grillo',country:'ARG'},{rank:50,name:'Austin Eckroat',country:'USA'},
-  {rank:51,name:'Mark Hubbard',country:'USA'},{rank:52,name:'Joe Highsmith',country:'USA'},
-  {rank:53,name:'Kevin Yu',country:'TPE'},{rank:54,name:'Chez Reavie',country:'USA'},
-  {rank:55,name:'Robby Shelton',country:'USA'},{rank:56,name:'Luke List',country:'USA'},
-  {rank:57,name:'Taylor Pendrith',country:'CAN'},{rank:58,name:'Aaron Rai',country:'ENG'},
-  {rank:59,name:'Byeong Hun An',country:'KOR'},{rank:60,name:'Chris Kirk',country:'USA'},
 ];
 
 const AVATARCOLORS = ['#1D9E75','#BA7517','#185FA5','#993556','#533ab7','#3B6D11','#A32D2D','#5F5E5A','#0F6E56','#854F0B'];
@@ -653,6 +620,7 @@ const appState = {
   contest: null,
   participants: [],
   teams: [],
+  contestFields: [],
   currentUser: localStorage.getItem('golfFan_currentUser') || null,
   liveScores: []
 };
@@ -718,6 +686,164 @@ function shuffle(array) {
   return copy;
 }
 
+function normalizeGolferName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getFieldGolfers() {
+  return [...appState.contestFields].sort((a, b) => {
+    const aRank = Number(a.rank_order || 9999);
+    const bRank = Number(b.rank_order || 9999);
+    if (aRank !== bRank) return aRank - bRank;
+    return String(a.name || '').localeCompare(String(b.name || ''));
+  });
+}
+
+function parseFieldInput(raw) {
+  const lines = String(raw || '')
+    .split(/\n+/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  const golfers = [];
+  const seen = new Set();
+
+  lines.forEach((line, idx) => {
+    const clean = line.replace(/\t/g, ',').trim();
+    let parts;
+
+    if (clean.includes('|')) {
+      parts = clean.split('|').map(p => p.trim()).filter(Boolean);
+    } else if (clean.includes(',')) {
+      parts = clean.split(',').map(p => p.trim()).filter(Boolean);
+    } else {
+      parts = [clean];
+    }
+
+    let rank_order = idx + 1;
+    let name = '';
+    let country = '';
+
+    if (/^\d+$/.test(parts[0])) {
+      rank_order = parseInt(parts[0], 10);
+      name = parts[1] || '';
+      country = parts[2] || '';
+    } else {
+      name = parts[0] || '';
+      country = parts[1] || '';
+    }
+
+    if (!name) return;
+
+    const key = normalizeGolferName(name);
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    golfers.push({
+      rank_order,
+      name,
+      country
+    });
+  });
+
+  return golfers;
+}
+
+async function importField() {
+  const contestId = getContestIdFromURL();
+  if (!contestId || !appState.contest) {
+    alert('Create the contest first.');
+    return;
+  }
+  if (!isCommissioner()) {
+    alert('Only the commissioner can import the field.');
+    return;
+  }
+  if (appState.contest.teams_generated) {
+    alert('Reset the contest before changing the field.');
+    return;
+  }
+
+  const raw = $('field-import-text').value;
+  const golfers = parseFieldInput(raw);
+
+  if (!golfers.length) {
+    alert('Paste at least one golfer.');
+    return;
+  }
+
+  const rows = golfers.map(g => ({
+    contest_id: contestId,
+    rank_order: g.rank_order,
+    name: g.name,
+    country: g.country || ''
+  }));
+
+  const { error: deleteError } = await sb
+    .from('contest_fields')
+    .delete()
+    .eq('contest_id', contestId);
+
+  if (deleteError) {
+    console.error(deleteError);
+    alert('Could not clear old field.');
+    return;
+  }
+
+  const { error: insertError } = await sb
+    .from('contest_fields')
+    .insert(rows);
+
+  if (insertError) {
+    console.error(insertError);
+    alert('Could not import field.');
+    return;
+  }
+
+  $('field-import-text').value = '';
+  await fetchContest();
+  rerenderAll();
+  alert(`Imported ${rows.length} golfers.`);
+}
+
+async function clearField() {
+  const contestId = getContestIdFromURL();
+  if (!contestId || !appState.contest) {
+    alert('No contest loaded.');
+    return;
+  }
+  if (!isCommissioner()) {
+    alert('Only the commissioner can clear the field.');
+    return;
+  }
+  if (appState.contest.teams_generated) {
+    alert('Reset the contest before clearing the field.');
+    return;
+  }
+  if (!confirm('Clear the imported field?')) return;
+
+  const { error } = await sb
+    .from('contest_fields')
+    .delete()
+    .eq('contest_id', contestId);
+
+  if (error) {
+    console.error(error);
+    alert('Could not clear field.');
+    return;
+  }
+
+  await fetchContest();
+  rerenderAll();
+  alert('Field cleared.');
+}
+
 function buildDynamicTiers(golfers, participantCount) {
   if (!participantCount || participantCount < 2) return [];
   const tiers = [];
@@ -730,16 +856,18 @@ function buildDynamicTiers(golfers, participantCount) {
 function buildTeams(playerNames, golfers) {
   const participantCount = playerNames.length;
   if (participantCount < 2) throw new Error('Need at least 2 participants.');
+  if (!golfers.length) throw new Error('Import the field first.');
 
   const baseTeamSize = Math.floor(golfers.length / participantCount);
-  const usableCount = baseTeamSize * participantCount;
+  if (baseTeamSize < 1) throw new Error('Not enough golfers for the number of entrants.');
 
+  const usableCount = baseTeamSize * participantCount;
   const usableGolfers = golfers.slice(0, usableCount);
   const leftovers = golfers.slice(usableCount);
 
   const tiers = buildDynamicTiers(usableGolfers, participantCount);
-
   const teams = {};
+
   playerNames.forEach(name => teams[name] = []);
 
   tiers.forEach(tier => {
@@ -757,15 +885,19 @@ function buildTeams(playerNames, golfers) {
 }
 
 function calcFantasyScore(golfers) {
-  return (golfers || []).reduce((sum, g) => sum + Math.max(-8, -Math.floor((61 - g.rank) / 9)), 0);
+  return (golfers || []).reduce((sum, g) => {
+    const rank = Number(g.rank_order || g.rank || 999);
+    return sum + Math.max(-8, -Math.floor((Math.max(1, 101 - rank)) / 9));
+  }, 0);
 }
 
 function getTierClass(rank, participantCount) {
   if (!participantCount) return 't4';
-  const tierIndex = Math.floor((rank - 1) / participantCount) + 1;
+  const tierIndex = Math.floor((Number(rank) - 1) / participantCount) + 1;
   const mapped = ((tierIndex - 1) % 4) + 1;
   return 't' + mapped;
 }
+
 function getMajorTiming(major) {
   if (!major?.startDate || !major?.endDate) return { state: 'unknown' };
   const now = new Date();
@@ -776,41 +908,27 @@ function getMajorTiming(major) {
   return { state: 'live', start, end };
 }
 
-function getGolferOwners(golferRank) {
-  return appState.teams
-    .filter(team => (team.golfers || []).some(g => g.rank === golferRank))
-    .map(team => team.participant_name);
-}
-
 function getOfficialLeaderboardConfig(major) {
   const configs = {
     masters: {
       sourceName: 'Masters.com',
       buttonLabel: 'Open Masters Leaderboard',
-      url: 'https://www.masters.com/en_US/scores/index.html',
-      embedNote: 'For the Masters, this app links out to the official leaderboard instead of embedding scores directly.',
-      availability: 'Official site'
+      url: 'https://www.masters.com/en_US/scores/index.html'
     },
     pga: {
       sourceName: 'PGAChampionship.com',
       buttonLabel: 'Open PGA Championship Leaderboard',
-      url: 'https://www.pgachampionship.com/leaderboard',
-      embedNote: 'The official championship site publishes the leaderboard before play begins, so your group can always jump straight into the live scoring page.',
-      availability: 'Official site'
+      url: 'https://www.pgachampionship.com/leaderboard'
     },
     usopen: {
       sourceName: 'USOpen.com',
       buttonLabel: 'Open U.S. Open Site',
-      url: 'https://www.usopen.com/',
-      embedNote: 'This free version keeps the U.S. Open live experience on the official championship site and uses this app as the fantasy ownership layer.',
-      availability: 'Official site'
+      url: 'https://www.usopen.com/'
     },
     open: {
       sourceName: 'TheOpen.com',
       buttonLabel: 'Open The Open Leaderboard',
-      url: 'https://www.theopen.com/Leaderboard',
-      embedNote: 'The Open also offers a free official leaderboard widget for websites, so this is the easiest major to upgrade from link-out to embedded scoring later.',
-      availability: 'Free official widget available'
+      url: 'https://www.theopen.com/Leaderboard'
     }
   };
   return configs[major?.id] || configs.masters;
@@ -821,18 +939,7 @@ function buildOwnershipRows() {
     ...g,
     owner: team.participant_name
   })));
-  return rows.sort((a, b) => a.rank - b.rank || a.owner.localeCompare(b.owner));
-}
-
-
-function normalizeGolferName(name) {
-  return String(name || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9 ]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return rows.sort((a, b) => Number(a.rank_order || a.rank || 999) - Number(b.rank_order || b.rank || 999) || a.owner.localeCompare(b.owner));
 }
 
 function buildOwnerLookup() {
@@ -841,7 +948,7 @@ function buildOwnerLookup() {
     (team.golfers || []).forEach(golfer => {
       byName.set(normalizeGolferName(golfer.name), {
         owner: team.participant_name,
-        rank: golfer.rank,
+        rank: golfer.rank_order || golfer.rank,
         country: golfer.country || ''
       });
     });
@@ -950,6 +1057,7 @@ async function fetchContest() {
     appState.contest = null;
     appState.participants = [];
     appState.teams = [];
+    appState.contestFields = [];
     return;
   }
 
@@ -968,18 +1076,27 @@ async function fetchContest() {
   if (!contest) {
     appState.participants = [];
     appState.teams = [];
+    appState.contestFields = [];
     return;
   }
 
-  const [{ data: participants, error: participantsError }, { data: teams, error: teamsError }] = await Promise.all([
+  const [
+    { data: participants, error: participantsError },
+    { data: teams, error: teamsError },
+    { data: contestFields, error: fieldsError }
+  ] = await Promise.all([
     sb.from('participants').select('*').eq('contest_id', contestId).order('created_at', { ascending: true }),
-    sb.from('teams').select('*').eq('contest_id', contestId).order('participant_name', { ascending: true })
+    sb.from('teams').select('*').eq('contest_id', contestId).order('participant_name', { ascending: true }),
+    sb.from('contest_fields').select('*').eq('contest_id', contestId).order('rank_order', { ascending: true })
   ]);
 
   if (participantsError) console.error('participantsError', participantsError);
   if (teamsError) console.error('teamsError', teamsError);
+  if (fieldsError) console.error('fieldsError', fieldsError);
+
   appState.participants = participants || [];
   appState.teams = teams || [];
+  appState.contestFields = contestFields || [];
 }
 
 function subscribeToContest() {
@@ -1000,6 +1117,10 @@ function subscribeToContest() {
       rerenderAll();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'teams', filter: `contest_id=eq.${contestId}` }, async () => {
+      await fetchContest();
+      rerenderAll();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'contest_fields', filter: `contest_id=eq.${contestId}` }, async () => {
       await fetchContest();
       rerenderAll();
     })
@@ -1041,10 +1162,7 @@ async function saveSettings() {
     subscribeToContest();
     await fetchContest();
     rerenderAll();
-    alert(`Contest created.
-
-Share this link:
-${window.location.href}`);
+    alert(`Contest created.\n\nShare this link:\n${window.location.href}`);
     return;
   }
 
@@ -1137,12 +1255,19 @@ async function startDraft() {
     alert('Need at least 2 participants.');
     return;
   }
-  const teamsMap = buildTeams(participantNames, GOLFERS);
+
+  const fieldGolfers = getFieldGolfers();
+  if (!fieldGolfers.length) {
+    alert('Import the field first.');
+    return;
+  }
+
+  const teamsMap = buildTeams(participantNames, fieldGolfers);
   const teamRows = Object.keys(teamsMap).map(name => ({
-  contest_id: contestId,
-  participant_name: name,
-  golfers: teamsMap[name],
-}));
+    contest_id: contestId,
+    participant_name: name,
+    golfers: teamsMap[name],
+  }));
   const commissionerKey = getCommissionerKey(contestId);
 
   const { error: contestError } = await sb.from('contests').update({ locked: true, teams_generated: true })
@@ -1219,11 +1344,12 @@ async function clearAll() {
     alert('Only the commissioner can delete the contest.');
     return;
   }
-  if (!confirm('Delete this entire contest, all participants, and all teams? This cannot be undone.')) return;
+  if (!confirm('Delete this entire contest, all participants, all field golfers, and all teams? This cannot be undone.')) return;
   const commissionerKey = getCommissionerKey(contestId);
 
   await sb.from('teams').delete().eq('contest_id', contestId);
   await sb.from('participants').delete().eq('contest_id', contestId);
+  await sb.from('contest_fields').delete().eq('contest_id', contestId);
   const { error } = await sb.from('contests').delete().eq('id', contestId).eq('commissioner_key', commissionerKey);
   if (error) {
     console.error(error);
@@ -1251,9 +1377,9 @@ function renderHome() {
     $('join-section').style.display = 'block';
     $('already-joined').style.display = 'none';
     $('summary-tier-count').textContent = '—';
-    $('summary-tier-note').textContent = 'Generated from the number of joined players.';
+    $('summary-tier-note').textContent = 'Import the field from Setup.';
     $('summary-team-size').textContent = '—';
-    $('summary-team-note').textContent = 'Every team gets one golfer from each ranking tier.';
+    $('summary-team-note').textContent = 'Even teams for entrants. Grandma gets leftovers.';
   } else {
     const major = getMajorById(contest.major);
     $('hero-tournament').textContent = `${major.name} 2026`;
@@ -1263,11 +1389,16 @@ function renderHome() {
     $('hero-draft').textContent = contest.teams_generated ? 'Teams Generated' : contest.locked ? 'Locked' : 'Collecting Entries';
 
     const activeCount = participants.length || parseInt(contest.max_players || 0, 10) || 0;
-    const teamSize = activeCount >= 2 ? Math.floor(GOLFERS.length / activeCount) : 0;
-    $('summary-tier-count').textContent = activeCount >= 2 ? `${teamSize} tiers` : '—';
-    $('summary-tier-note').textContent = activeCount >= 2 ? `${activeCount} golfers per tier based on current entries.` : 'Generated from the number of joined players.';
-    $('summary-team-size').textContent = activeCount >= 2 ? `${teamSize} golfers` : '—';
-    $('summary-team-note').textContent = activeCount >= 2 ? `Each roster gets 1 golfer from each of the ${teamSize} tiers.` : 'Every team gets one golfer from each ranking tier.';
+    const fieldSize = appState.contestFields.length;
+    const teamSize = activeCount >= 2 && fieldSize ? Math.floor(fieldSize / activeCount) : 0;
+    const leftovers = activeCount >= 2 && fieldSize ? (fieldSize % activeCount) : 0;
+
+    $('summary-tier-count').textContent = fieldSize ? `${fieldSize} golfers` : '—';
+    $('summary-tier-note').textContent = fieldSize ? 'Imported real tournament field.' : 'Import the field from Setup.';
+    $('summary-team-size').textContent = teamSize ? `${teamSize} golfers` : '—';
+    $('summary-team-note').textContent = teamSize
+      ? `Each entrant gets ${teamSize}. ${leftovers ? `${leftovers} leftover golfer(s) go to Grandma.` : 'No leftovers.'}`
+      : 'Even entrant teams will be generated from the imported field.';
 
     const joinedMatch = currentUser ? participants.find(p => p.name.toLowerCase() === currentUser.toLowerCase()) : null;
     if (joinedMatch) {
@@ -1310,6 +1441,7 @@ function renderDraft() {
   const contest = appState.contest;
   const participants = appState.participants;
   const teams = appState.teams;
+  const fieldGolfers = getFieldGolfers();
 
   if (!contest) {
     $('draft-not-started').style.display = 'block';
@@ -1327,43 +1459,72 @@ function renderDraft() {
   $('draft-active').style.display = 'block';
   $('draft-status-badge').innerHTML = '<span class="status-pill status-live">Teams Ready</span>';
   const grandmaTeam = teams.find(t => t.participant_name === 'Grandma');
-$('current-pick-info').innerHTML = `
-  <strong>${participants.length}</strong> entries ·
-  <strong>${teams.length}</strong> total teams
-  ${grandmaTeam ? ` · <strong>${grandmaTeam.golfers?.length || 0}</strong> leftover golfer(s) assigned to Grandma` : ''}
-`;
+  $('current-pick-info').innerHTML = `
+    <strong>${participants.length}</strong> entries ·
+    <strong>${teams.length}</strong> total teams
+    ${grandmaTeam ? ` · <strong>${grandmaTeam.golfers?.length || 0}</strong> leftover golfer(s) assigned to Grandma` : ''}
+  `;
 
-  const tiers = buildDynamicTiers(GOLFERS, participants.length);
+  const usableFieldSize = participants.length ? Math.floor(fieldGolfers.length / participants.length) * participants.length : 0;
+  const usableField = fieldGolfers.slice(0, usableFieldSize);
+  const tiers = buildDynamicTiers(usableField, participants.length);
+
   $('tier-display').innerHTML = tiers.map((tier, idx) => `
     <div class="tier-section">
       <div class="tier-header">
         <span class="tier-badge t${(idx % 4) + 1}">Tier ${idx + 1}</span>
-        <span class="tier-note">World ranking #${tier[0]?.rank}–#${tier[tier.length - 1]?.rank}</span>
+        <span class="tier-note">Seed #${tier[0]?.rank_order}–#${tier[tier.length - 1]?.rank_order}</span>
       </div>
       <div class="golfer-grid">
         ${tier.map(g => {
-          const owner = teams.find(t => (t.golfers || []).some(x => x.rank === g.rank));
+          const owner = teams.find(t => (t.golfers || []).some(x => normalizeGolferName(x.name) === normalizeGolferName(g.name)));
           const mine = owner && appState.currentUser && owner.participant_name.toLowerCase() === appState.currentUser.toLowerCase();
-          return `<div class="golfer-card ${mine ? 'my-pick' : 'taken'}">
+          const isGrandma = owner && owner.participant_name === 'Grandma';
+          return `<div class="golfer-card ${mine ? 'my-pick' : isGrandma ? 'grandma-pick' : 'taken'}">
             <div class="golfer-name">${escapeHtml(g.name)}</div>
-            <div class="golfer-rank">WR #${g.rank} · ${escapeHtml(g.country)}</div>
-            <div class="pick-owner ${mine ? 'mine' : ''}">${owner ? `Assigned to ${escapeHtml(owner.participant_name)}` : 'Unassigned'}</div>
+            <div class="golfer-rank">Seed #${escapeHtml(g.rank_order)}${g.country ? ` · ${escapeHtml(g.country)}` : ''}</div>
+            <div class="pick-owner ${mine ? 'mine' : isGrandma ? 'grandma' : ''}">${owner ? `Assigned to ${escapeHtml(owner.participant_name)}` : 'Unassigned'}</div>
           </div>`;
         }).join('')}
       </div>
     </div>
   `).join('');
 
-  $('draft-order-list').innerHTML = teams.map((team, idx) => `
-    <div class="draft-order-row ${appState.currentUser && team.participant_name.toLowerCase() === appState.currentUser.toLowerCase() ? 'draft-current' : ''}">
-      <div class="draft-turn">${idx + 1}</div>
-      <div class="avatar" style="background:${AVATARCOLORS[idx % AVATARCOLORS.length]}">${escapeHtml(team.participant_name.slice(0,2).toUpperCase())}</div>
-      <div>
-        <div style="font-weight:500;">${escapeHtml(team.participant_name)}</div>
-        <div class="text-muted">${team.golfers?.length || 0} golfers assigned</div>
+  if (grandmaTeam?.golfers?.length) {
+    $('tier-display').innerHTML += `
+      <div class="tier-section">
+        <div class="tier-header">
+          <span class="tier-badge t4">Grandma</span>
+          <span class="tier-note">${grandmaTeam.golfers.length} leftover golfer(s)</span>
+        </div>
+        <div class="golfer-grid">
+          ${grandmaTeam.golfers.map(g => `
+            <div class="golfer-card grandma-pick">
+              <div class="golfer-name">${escapeHtml(g.name)}</div>
+              <div class="golfer-rank">Seed #${escapeHtml(g.rank_order || g.rank)}${g.country ? ` · ${escapeHtml(g.country)}` : ''}</div>
+              <div class="pick-owner grandma">Assigned to Grandma</div>
+            </div>
+          `).join('')}
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }
+
+  $('draft-order-list').innerHTML = teams.map((team, idx) => {
+    const isGrandma = team.participant_name === 'Grandma';
+    const avatarText = isGrandma ? 'GR' : team.participant_name.slice(0,2).toUpperCase();
+    const avatarColor = isGrandma ? '#888780' : AVATARCOLORS[idx % AVATARCOLORS.length];
+    return `
+      <div class="draft-order-row ${appState.currentUser && !isGrandma && team.participant_name.toLowerCase() === appState.currentUser.toLowerCase() ? 'draft-current' : ''}">
+        <div class="draft-turn">${isGrandma ? '—' : idx + 1}</div>
+        <div class="avatar" style="background:${avatarColor}">${escapeHtml(avatarText)}</div>
+        <div>
+          <div style="font-weight:500;">${escapeHtml(team.participant_name)}</div>
+          <div class="text-muted">${team.golfers?.length || 0} golfers assigned</div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderLeaderboard() {
@@ -1417,7 +1578,7 @@ function renderLeaderboard() {
             </td>
             <td>
               <div class="team-golfers">
-                ${p.golfers.map(g => `<span class="golfer-pill ${getTierClass(g.rank, appState.participants.length)}">${escapeHtml(g.name)}</span>`).join('')}
+                ${p.golfers.map(g => `<span class="golfer-pill ${getTierClass(Number(g.rank_order || g.rank || 999), Math.max(1, appState.participants.length))}">${escapeHtml(g.name)}</span>`).join('')}
               </div>
             </td>
             <td style="text-align:right;" class="${scoreCls}">${scoreTxt}</td>
@@ -1425,18 +1586,8 @@ function renderLeaderboard() {
         }).join('')}
       </tbody>
     </table>
-    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Standings show each player's full roster. Scoring is still placeholder world-ranking scoring until you connect a real live leaderboard feed.</div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Standings show each team's full roster. Scoring is still placeholder seed-based scoring until a reliable live feed is connected.</div>
   `;
-}
-
-function generateMockLiveScores() {
-  const assignedRanks = new Set(appState.teams.flatMap(t => (t.golfers || []).map(g => g.rank)));
-  return GOLFERS.slice(0, 25).map((g, idx) => {
-    const today = ((idx % 7) - 3);
-    const total = Math.max(-10, Math.min(6, Math.floor((g.rank - 1) / 8) - 5 + today));
-    const thru = idx < 4 ? 'F' : `${Math.min(18, 5 + idx % 14)}`;
-    return { ...g, total, today, thru, drafted: assignedRanks.has(g.rank) };
-  }).sort((a, b) => a.total - b.total || a.rank - b.rank).map((g, i) => ({ ...g, pos: i + 1 }));
 }
 
 async function loadLiveScores() {
@@ -1518,7 +1669,7 @@ async function loadLiveScores() {
                   <div class="tracker-top">
                     <div>
                       <div class="tracker-name">${escapeHtml(row.name)}</div>
-                      <div class="tracker-sub">World ranking #${row.rank} · ${escapeHtml(row.country || '—')}</div>
+                      <div class="tracker-sub">Seed #${escapeHtml(row.rank_order || row.rank || '—')}${row.country ? ` · ${escapeHtml(row.country)}` : ''}</div>
                     </div>
                   </div>
                   <div class="owner-list"><span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span></div>
@@ -1571,7 +1722,7 @@ async function loadLiveScores() {
                   <tr class="${row.isTracked ? 'highlight-row' : ''}">
                     <td>
                       <div style="font-weight:500;">${escapeHtml(row.golfer_name)}</div>
-                      <div style="font-size:11px; color:var(--muted);">${row.rank ? `Pool golfer · WR #${row.rank}` : 'Not on a fantasy team'}</div>
+                      <div style="font-size:11px; color:var(--muted);">${row.rank ? `Pool golfer · Seed #${row.rank}` : 'Not on a fantasy team'}</div>
                     </td>
                     <td>${escapeHtml(row.tee_time_text || '-')}</td>
                     <td>${row.owner ? `<span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span>` : '<span class="text-muted">—</span>'}</td>
@@ -1643,7 +1794,7 @@ async function loadLiveScores() {
                     <td class="live-pos">${escapeHtml(row.position_text || '-')}</td>
                     <td>
                       <div style="font-weight:500;">${escapeHtml(row.golfer_name)}</div>
-                      <div style="font-size:11px; color:var(--muted);">${row.rank ? `Pool golfer · WR #${row.rank}` : 'Not on a fantasy team'}</div>
+                      <div style="font-size:11px; color:var(--muted);">${row.rank ? `Pool golfer · Seed #${row.rank}` : 'Not on a fantasy team'}</div>
                     </td>
                     <td class="${totalCls}">${escapeHtml(row.total_text || '-')}</td>
                     <td class="${todayCls}">${escapeHtml(row.round_text || '-')}</td>
@@ -1692,18 +1843,46 @@ function renderSetup() {
     $('setup-maxplayers').value = String(contest.max_players || 10);
   }
 
-  const tiers = buildDynamicTiers(GOLFERS, previewCount);
-  $('admin-tier-preview').innerHTML = !tiers.length ? '<div class="empty-state">At least 2 joined players are needed before the generator can split the field into even ranking tiers.</div>' : tiers.map((tier, ti) => `
-    <div style="margin-bottom:14px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <span class="tier-badge t${(ti % 4) + 1}">Tier ${ti + 1}</span>
-        <span class="tier-note">WR #${tier[0].rank}–${tier[tier.length - 1].rank} · ${tier.length} golfers</span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        ${tier.map(g => `<span style="font-size:12px;padding:3px 9px;background:var(--gray-light);border-radius:12px;color:var(--text);">#${g.rank} ${escapeHtml(g.name)}</span>`).join('')}
-      </div>
-    </div>
-  `).join('');
+  const fieldGolfers = getFieldGolfers();
+  $('field-import-status').textContent = fieldGolfers.length
+    ? `${fieldGolfers.length} golfers currently imported for this contest.`
+    : 'No field imported yet.';
+
+  if (!fieldGolfers.length) {
+    $('admin-tier-preview').innerHTML = '<div class="empty-state">Import the field above, then this preview will show how golfers will be split across entrant teams, with leftovers sent to Grandma.</div>';
+  } else if (previewCount < 2) {
+    $('admin-tier-preview').innerHTML = '<div class="empty-state">At least 2 joined players are needed to preview teams.</div>';
+  } else {
+    const usableCount = Math.floor(fieldGolfers.length / previewCount) * previewCount;
+    const usableGolfers = fieldGolfers.slice(0, usableCount);
+    const leftovers = fieldGolfers.slice(usableCount);
+    const tiers = buildDynamicTiers(usableGolfers, previewCount);
+
+    $('admin-tier-preview').innerHTML = `
+      ${tiers.map((tier, ti) => `
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span class="tier-badge t${(ti % 4) + 1}">Tier ${ti + 1}</span>
+            <span class="tier-note">Seed #${tier[0].rank_order}–${tier[tier.length - 1].rank_order} · ${tier.length} golfers</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${tier.map(g => `<span style="font-size:12px;padding:3px 9px;background:var(--gray-light);border-radius:12px;color:var(--text);">#${g.rank_order} ${escapeHtml(g.name)}</span>`).join('')}
+          </div>
+        </div>
+      `).join('')}
+      ${leftovers.length ? `
+        <div style="margin-top:18px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span class="tier-badge t4">Grandma</span>
+            <span class="tier-note">${leftovers.length} leftover golfer(s)</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${leftovers.map(g => `<span style="font-size:12px;padding:3px 9px;background:#f5f4f1;border-radius:12px;color:var(--text);">#${g.rank_order} ${escapeHtml(g.name)}</span>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+    `;
+  }
 
   const commissioner = !!contest && isCommissioner();
   const badge = $('commissioner-status-badge');
@@ -1724,12 +1903,12 @@ function renderSetup() {
     helper = document.createElement('p');
     helper.id = 'commissioner-helper';
     helper.className = 'text-muted mt-8';
-    document.querySelector('#page-setup .card:nth-of-type(2)').appendChild(helper);
+    document.querySelector('#page-setup .card:nth-of-type(3)').appendChild(helper);
   }
   helper.textContent = !contest ? 'Create the contest first, then share the link with your group.' :
     commissioner ?
-      (contest.teams_generated ? 'Teams are live. Reset to unlock entries and regenerate from the current participant list.' : contest.locked ? 'Contest is locked. Reset if you need to reopen entries or regenerate the teams.' : 'When everyone has joined, click Generate Teams. The app uses the joined player count to split the field into equal ranking tiers and build every roster automatically.')
-      : 'Only the commissioner can save settings, generate teams, reset, or delete this contest from the browser that created it.';
+      (contest.teams_generated ? 'Teams are live. Reset to unlock entries and regenerate from the current participant list and imported field.' : contest.locked ? 'Contest is locked. Reset if you need to reopen entries or regenerate the teams.' : 'Import the field, let everyone join, then click Generate Teams. Real entrants stay even and leftovers go to Grandma.')
+      : 'Only the commissioner can import the field, save settings, generate teams, reset, or delete this contest from the browser that created it.';
 }
 
 async function initApp() {
