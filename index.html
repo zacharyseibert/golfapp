@@ -1594,12 +1594,11 @@ function renderLeaderboard() {
   const contest = appState.contest;
 
   if (!contest) {
-    pill.textContent = 'No Contest';
-    pill.className = 'status-pill status-draft';
-    body.innerHTML = '<div class="empty-state">Create a contest first.</div>';
-    renderLeaderboard();
-    return;
-  }
+  pill.textContent = 'No Contest';
+  pill.className = 'status-pill status-draft';
+  body.innerHTML = '<div class="empty-state">Create a contest first.</div>';
+  return;
+}
 
   if (!contest.teams_generated) {
     pill.textContent = contest.locked ? 'Locked' : 'Entries Open';
@@ -1649,7 +1648,7 @@ function renderLeaderboard() {
               </td>
               <td>
                 <div class="team-golfers">
-                  ${p.golfers.map(g => `<span class="golfer-pill ${getTierClass(g.rank, Math.max(appState.participants.length, 1))}">${escapeHtml(g.name)}</span>`).join('')}
+                  ${p.golfers.map(g => `<span class="golfer-pill ${getTierClass(g.rank_order || g.rank, Math.max(appState.participants.length, 1))}">${escapeHtml(g.name)}</span>`).join('')}
                 </div>
               </td>
               <td style="text-align:right;" class="${scoreCls}">${scoreTxt}</td>
@@ -1806,6 +1805,7 @@ async function loadLiveScores() {
         </div>
       </div>
     `;
+    renderLeaderboard();
     return;
   }
 
@@ -1883,6 +1883,7 @@ async function loadLiveScores() {
         </div>
       </div>
     `;
+    renderLeaderboard();
     return;
   }
 
@@ -1958,6 +1959,7 @@ async function loadLiveScores() {
       </div>
     </div>
   `;
+  renderLeaderboard();
 }
 
 function renderSetup() {
