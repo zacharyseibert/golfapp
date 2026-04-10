@@ -917,34 +917,56 @@ function parseThruToSortableValue(thruText) {
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
-
 function isRenderableLeaderboardRow(row) {
   if (!row || row.row_type !== 'leaderboard') return false;
 
-  const pos = parsePositionToNumber(row.position_text);
   const total = parseScoreToNumber(row.total_text);
+  if (total === null) return false;
+
+  const pos = parsePositionToNumber(row.position_text);
   const thru = parseThruToSortableValue(row.thru_text);
 
-  return pos !== null && total !== null && thru !== null;
+  return pos !== null || thru !== null;
 }
 
 function sortLeaderboardRowsClient(rows) {
   return [...rows].sort((a, b) => {
-    const aPos = parsePositionToNumber(a.position_text) ?? 9999;
-    const bPos = parsePositionToNumber(b.position_text) ?? 9999;
-    if (aPos !== bPos) return aPos - bPos;
+    const aTotal = parseScoreToNumber(a.total_text);
+    const bTotal = parseScoreToNumber(b.total_text);
 
-    const aTotal = parseScoreToNumber(a.total_text) ?? 9999;
-    const bTotal = parseScoreToNumber(b.total_text) ?? 9999;
-    if (aTotal !== bTotal) return aTotal - bTotal;
+    const aHasScore = aTotal !== null;
+    const bHasScore = bTotal !== null;
 
-    const aThru = parseThruToSortableValue(a.thru_text) ?? -1;
-    const bThru = parseThruToSortableValue(b.thru_text) ?? -1;
-    if (aThru !== bThru) return bThru - aThru;
+    if (aHasScore && !bHasScore) return -1;
+    if (!aHasScore && bHasScore) return 1;
+
+    if (aHasScore && bHasScore && aTotal !== bTotal) {
+      return aTotal - bTotal;
+    }
+
+    const aThru = parseThruToSortableValue(a.thru_text);
+    const bThru = parseThruToSortableValue(b.thru_text);
+
+    if (aThru !== null && bThru !== null && aThru !== bThru) {
+      return bThru - aThru;
+    }
+
+    if (aThru !== null && bThru === null) return -1;
+    if (aThru === null && bThru !== null) return 1;
+
+    const aPos = parsePositionToNumber(a.position_text);
+    const bPos = parsePositionToNumber(b.position_text);
+
+    if (aPos !== null && bPos !== null && aPos !== bPos) {
+      return aPos - bPos;
+    }
+
+    if (aPos !== null && bPos === null) return -1;
+    if (aPos === null && bPos !== null) return 1;
 
     return String(a.golfer_name || '').localeCompare(String(b.golfer_name || ''));
   });
-}  
+}
 
 function normalizeCompareName(name) {
   return String(name || '')
@@ -1790,76 +1812,28 @@ const liveScoreMap = buildLiveScoreMap();
   `;
 }
 
+function sortFieldRowsClient(rows) {
+  return [...rows].sort((a, b) => {
+    const aTee = String(a.tee_time_text || '');
+    const bTee = String(b.tee_time_text || '');
+
+    if (aTee && bTee && aTee !== bTee) {
+      return aTee.localeCompare(bTee);
+    }
+
+    if (aTee && !bTee) return -1;
+    if (!aTee && bTee) return 1;
+
+    return String(a.golfer_name || '').localeCompare(String(b.golfer_name || ''));
+  });
+}
+  
 async function loadLiveScores() {
   const contest = appState.contest;
   const body = $('live-scores-body');
   const label = $('live-tournament-label');
   const refreshBtn = $('btn-refresh-live');
 
-  function parseLiveScoreValue(scoreText) {
-    if (scoreText == null) return null;
-    const s = String(scoreText).trim().toUpperCase();
-    if (!s || s === '-' || s === '--') return null;
-    if (s === 'E') return 0;
-    const n = Number(s);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  function parseLivePositionValue(positionText) {
-    if (!positionText) return null;
-    const raw = String(positionText).trim().toUpperCase();
-    const digits = raw.replace(/[^0-9]/g, '');
-    if (!digits) return null;
-    const n = Number(digits);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  function isValidLiveTotal(totalText) {
-    const n = parseLiveScoreValue(totalText);
-    return n !== null && n >= -25 && n <= 25;
-  }
-
-  function isValidLiveThru(thruText) {
-    if (!thruText) return false;
-    const v = String(thruText).trim().toUpperCase();
-    if (v === 'F') return true;
-    if (/^\d{1,2}$/.test(v)) {
-      const n = Number(v);
-      return n >= 1 && n <= 18;
-    }
-    return false;
-  }
-
-  function isRenderableLeaderboardRow(row) {
-    if (!row || row.row_type !== 'leaderboard') return false;
-    if (!row.position_text) return false;
-    if (!isValidLiveTotal(row.total_text)) return false;
-    if (!isValidLiveThru(row.thru_text)) return false;
-    return true;
-  }
-
-  function sortLeaderboardRowsClient(rows) {
-    return [...rows].sort((a, b) => {
-      const aPos = a.position_sort ?? parseLivePositionValue(a.position_text) ?? 9999;
-      const bPos = b.position_sort ?? parseLivePositionValue(b.position_text) ?? 9999;
-      if (aPos !== bPos) return aPos - bPos;
-
-      const aScore = parseLiveScoreValue(a.total_text);
-      const bScore = parseLiveScoreValue(b.total_text);
-      if (aScore !== null && bScore !== null && aScore !== bScore) return aScore - bScore;
-
-      return String(a.golfer_name || '').localeCompare(String(b.golfer_name || ''));
-    });
-  }
-
-  function sortFieldRowsClient(rows) {
-    return [...rows].sort((a, b) => {
-      const aTee = String(a.tee_time_text || '');
-      const bTee = String(b.tee_time_text || '');
-      if (aTee && bTee && aTee !== bTee) return aTee.localeCompare(bTee);
-      return String(a.golfer_name || '').localeCompare(String(b.golfer_name || ''));
-    });
-  }
 
   if (refreshBtn) {
     refreshBtn.disabled = !contest || !contest.teams_generated || !isCommissioner();
