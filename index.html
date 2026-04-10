@@ -1972,25 +1972,100 @@ async function loadLiveScores() {
     renderLeaderboard();
     return;
   }
+const leaderboardRows = sortLeaderboardRowsClient(
+  rawRows.filter(row => row.row_type === 'leaderboard')
+);
 
-  const sortedRows = sortAllLiveRowsClient(rawRows);
+const fieldRows = sortFieldRowsClient(
+  rawRows.filter(row => row.row_type === 'field')
+);
 
-  const rows = sortedRows.map(row => {
-    const owner = ownerLookup.get(normalizeGolferName(row.golfer_name));
-    return {
-      ...row,
-      owner: owner?.owner || '',
-      rank: owner?.rank || null,
-      country: owner?.country || '',
-      isTracked: !!owner
-    };
-  });
+const usingLeaderboard = leaderboardRows.some(row => parseScoreToNumber(row.total_text) !== null);
+const baseRows = usingLeaderboard ? leaderboardRows : fieldRows;
 
-  appState.liveScores = rows.filter(row => row.row_type === 'leaderboard');
+const rows = baseRows.map(row => {
+  const owner = ownerLookup.get(normalizeGolferName(row.golfer_name));
+  return {
+    ...row,
+    owner: owner?.owner || '',
+    rank: owner?.rank || null,
+    country: owner?.country || '',
+    isTracked: !!owner
+  };
+});
 
-  const updatedAt = rows.length
-    ? new Date(rows[0].updated_at || Date.now())
-    : null;
+appState.liveScores = leaderboardRows;
+
+const updatedAt = rows.length
+  ? new Date(rows[0].updated_at || Date.now())
+  : null;
+
+  if (!usingLeaderboard) {
+  body.innerHTML = `
+    <div class="live-layout">
+      <div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="flex items-center justify-between" style="margin-bottom:14px; gap:10px; flex-wrap:wrap;">
+            <div>
+              <div class="section-kicker">Tournament field</div>
+              <h3 style="font-family:'Playfair Display',serif; font-size:22px;">${escapeHtml(major.name)} Field & Tee Times</h3>
+            </div>
+            <div class="source-meta">
+              <span class="source-pill">${rows.length} golfers</span>
+              <span class="source-pill">${updatedAt ? `Updated ${updatedAt.toLocaleString()}` : 'Updated just now'}</span>
+            </div>
+          </div>
+          <table class="live-table">
+            <thead>
+              <tr>
+                <th>Golfer</th>
+                <th style="width:110px;">Tee Time</th>
+                <th style="width:140px;">On Team</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr class="${row.isTracked ? 'highlight-row' : ''}">
+                  <td>
+                    <div style="font-weight:500;">${escapeHtml(row.golfer_name)}</div>
+                    <div style="font-size:11px; color:var(--muted);">${row.rank ? `Pool golfer · Seed #${row.rank}` : 'Not on a fantasy team'}</div>
+                  </td>
+                  <td>${escapeHtml(row.tee_time_text || '-')}</td>
+                  <td>${row.owner ? `<span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span>` : '<span class="text-muted">—</span>'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="live-note">No usable leaderboard scores were scraped yet, so this view is showing the tournament field / tee times instead.</div>
+          <div class="mt-16">
+            <a class="btn btn-ghost btn-sm" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.buttonLabel)}</a>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-title">Fantasy Ownership Tracker</div>
+          <div class="team-legend">${renderTeamLegend()}</div>
+          <div class="tracker-list">
+            ${rows.filter(r => r.isTracked).map(row => `
+              <div class="tracker-row">
+                <div class="tracker-top">
+                  <div>
+                    <div class="tracker-name">${escapeHtml(row.golfer_name)}</div>
+                    <div class="tracker-sub">${escapeHtml(row.tee_time_text || '-')}</div>
+                  </div>
+                </div>
+                <div class="owner-list"><span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span></div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  renderLeaderboard();
+  return;
+}
 
   body.innerHTML = `
     <div class="live-layout">
