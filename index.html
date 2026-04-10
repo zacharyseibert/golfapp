@@ -2077,7 +2077,7 @@ const updatedAt = rows.length
               <h3 style="font-family:'Playfair Display',serif; font-size:22px;">${escapeHtml(major.name)} Leaderboard</h3>
             </div>
             <div class="source-meta">
-              <span class="source-pill">${rows.length} golfers</span>
+              <span class="source-pill">${appState.contestFields.length} golfers</span>
               <span class="source-pill">${updatedAt ? `Updated ${updatedAt.toLocaleString()}` : 'Updated just now'}</span>
             </div>
           </div>
