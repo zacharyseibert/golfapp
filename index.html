@@ -1096,19 +1096,21 @@ function renderTeamLegend() {
     </span>
   `).join('');
 }
-
-function showPage(name) {
+async function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+
   const page = $('page-' + name);
   if (page) page.classList.add('active');
+
   const tabIdx = { home: 0, draft: 1, leaderboard: 2, live: 3, setup: 4 }[name];
   const tabs = document.querySelectorAll('.nav-tab');
   if (tabs[tabIdx]) tabs[tabIdx].classList.add('active');
+
   if (name === 'home') renderHome();
   if (name === 'draft') renderDraft();
   if (name === 'leaderboard') await renderLeaderboard();
-  if (name === 'live') loadLiveScores();
+  if (name === 'live') await loadLiveScores();
   if (name === 'setup') renderSetup();
 }
 
@@ -1159,7 +1161,7 @@ async function fetchContest() {
   appState.teams = teams || [];
   appState.contestFields = contestFields || [];
 }
-
+  
 function subscribeToContest() {
   const contestId = getContestIdFromURL();
   if (activeChannel) {
@@ -1188,7 +1190,7 @@ function subscribeToContest() {
     .subscribe();
 }
 
-function rerenderAll() {
+async function rerenderAll() {
   renderHome();
   renderDraft();
   await renderLeaderboard();
