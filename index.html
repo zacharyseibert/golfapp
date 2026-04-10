@@ -1981,7 +1981,7 @@ const fieldRows = sortFieldRowsClient(
 );
 
 const usingLeaderboard = leaderboardRows.some(row => parseScoreToNumber(row.total_text) !== null);
-const baseRows = usingLeaderboard ? leaderboardRows : fieldRows;
+const baseRows = usingLeaderboard ? rawRows : fieldRows;
 
 const rows = baseRows.map(row => {
   const owner = ownerLookup.get(normalizeGolferName(row.golfer_name));
@@ -1994,7 +1994,7 @@ const rows = baseRows.map(row => {
   };
 });
 
-appState.liveScores = leaderboardRows;
+appState.liveScores = rows;
 
 const updatedAt = rows.length
   ? new Date(rows[0].updated_at || Date.now())
@@ -2011,7 +2011,7 @@ const updatedAt = rows.length
               <h3 style="font-family:'Playfair Display',serif; font-size:22px;">${escapeHtml(major.name)} Field & Tee Times</h3>
             </div>
             <div class="source-meta">
-              <span class="source-pill">${rows.length} golfers</span>
+              <span class="source-pill">${rawRows.length} golfers</span>
               <span class="source-pill">${updatedAt ? `Updated ${updatedAt.toLocaleString()}` : 'Updated just now'}</span>
             </div>
           </div>
