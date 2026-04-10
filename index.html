@@ -808,7 +808,7 @@ async function importField() {
 
   $('field-import-text').value = '';
   await fetchContest();
-  rerenderAll();
+  await rerenderAll();
   alert(`Imported ${rows.length} golfers.`);
 }
 
@@ -840,7 +840,7 @@ async function clearField() {
   }
 
   await fetchContest();
-  rerenderAll();
+  await rerenderAll();
   alert('Field cleared.');
 }
 
@@ -1107,7 +1107,7 @@ function showPage(name) {
   if (tabs[tabIdx]) tabs[tabIdx].classList.add('active');
   if (name === 'home') renderHome();
   if (name === 'draft') renderDraft();
-  if (name === 'leaderboard') renderLeaderboard();
+  if (name === 'leaderboard') await renderLeaderboard();
   if (name === 'live') loadLiveScores();
   if (name === 'setup') renderSetup();
 }
@@ -1171,19 +1171,19 @@ function subscribeToContest() {
   activeChannel = sb.channel('contest-room-' + contestId)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'contests', filter: `id=eq.${contestId}` }, async () => {
       await fetchContest();
-      rerenderAll();
+      await rerenderAll();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'participants', filter: `contest_id=eq.${contestId}` }, async () => {
       await fetchContest();
-      rerenderAll();
+      await rerenderAll();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'teams', filter: `contest_id=eq.${contestId}` }, async () => {
       await fetchContest();
-      rerenderAll();
+      await rerenderAll();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'contest_fields', filter: `contest_id=eq.${contestId}` }, async () => {
       await fetchContest();
-      rerenderAll();
+      await rerenderAll();
     })
     .subscribe();
 }
@@ -1191,7 +1191,7 @@ function subscribeToContest() {
 function rerenderAll() {
   renderHome();
   renderDraft();
-  renderLeaderboard();
+  await renderLeaderboard();
   renderSetup();
 }
 
@@ -1222,7 +1222,7 @@ async function saveSettings() {
     setContestIdInURL(contestId);
     subscribeToContest();
     await fetchContest();
-    rerenderAll();
+    await rerenderAll();
     alert(`Contest created.\n\nShare this link:\n${window.location.href}`);
     return;
   }
@@ -1249,7 +1249,7 @@ async function saveSettings() {
   }
 
   await fetchContest();
-  rerenderAll();
+  await rerenderAll();
   alert('Settings saved.');
 }
 
@@ -1294,7 +1294,7 @@ async function joinContest() {
   setCurrentUser(name);
   $('join-name').value = '';
   await fetchContest();
-  rerenderAll();
+  await rerenderAll();
 }
 
 async function startDraft() {
@@ -1354,7 +1354,7 @@ async function startDraft() {
   }
 
   await fetchContest();
-  rerenderAll();
+  await rerenderAll();
   showPage('draft');
   alert('Teams generated and contest locked.');
 }
@@ -1388,7 +1388,7 @@ async function resetDraft() {
   }
 
   await fetchContest();
-  rerenderAll();
+  await rerenderAll();
   alert('Contest reset.');
 }
 
@@ -1588,17 +1588,17 @@ function renderDraft() {
   }).join('');
 }
 
-function renderLeaderboard() {
+async function renderLeaderboard() {
   const body = $('leaderboard-body');
   const pill = $('lb-status-pill');
   const contest = appState.contest;
 
   if (!contest) {
-  pill.textContent = 'No Contest';
-  pill.className = 'status-pill status-draft';
-  body.innerHTML = '<div class="empty-state">Create a contest first.</div>';
-  return;
-}
+    pill.textContent = 'No Contest';
+    pill.className = 'status-pill status-draft';
+    body.innerHTML = '<div class="empty-state">Create a contest first.</div>';
+    return;
+  }
 
   if (!contest.teams_generated) {
     pill.textContent = contest.locked ? 'Locked' : 'Entries Open';
@@ -1607,11 +1607,32 @@ function renderLeaderboard() {
     return;
   }
 
+  let liveRows = [];
+
+  try {
+    const { data, error } = await sb
+      .from('live_scores')
+      .select('*')
+      .eq('contest_id', contest.id)
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('position_sort', { ascending: true, nullsFirst: false })
+      .order('golfer_name', { ascending: true });
+
+    if (error) {
+      console.error('leaderboard live_scores error', error);
+    } else {
+      liveRows = data || [];
+      appState.liveScores = liveRows;
+    }
+  } catch (err) {
+    console.error('renderLeaderboard fetch failed', err);
+  }
+
   const liveScoreMap = buildLiveScoreMap();
-  const hasLiveLeaderboard = (appState.liveScores || []).some(r => r.row_type === 'leaderboard');
+  const hasLiveLeaderboard = liveRows.some(r => r.row_type === 'leaderboard');
 
   if (!hasLiveLeaderboard) {
-    pill.textContent = 'Field Loaded';
+    pill.textContent = liveRows.some(r => r.row_type === 'field') ? 'Field Loaded' : 'Awaiting Live Scores';
     pill.className = 'status-pill status-upcoming';
 
     const seeded = appState.teams.map((team, idx) => ({
@@ -1637,12 +1658,13 @@ function renderLeaderboard() {
             const posCls = i === 0 ? 'pos-1' : i === 1 ? 'pos-2' : i === 2 ? 'pos-3' : 'pos-other';
             const scoreTxt = p.score === 0 ? 'E' : p.score > 0 ? `+${p.score}` : `${p.score}`;
             const scoreCls = p.score < 0 ? 'score-under' : p.score > 0 ? 'score-over' : 'score-even';
+            const initials = p.name === 'Grandma' ? 'GR' : p.name.slice(0,2).toUpperCase();
 
             return `<tr>
               <td><span class="pos-badge ${posCls}">${i + 1}</span></td>
               <td>
                 <div style="display:flex;align-items:center;gap:8px;">
-                  <div class="avatar" style="background:${AVATARCOLORS[p.colorIdx % AVATARCOLORS.length]};width:30px;height:30px;font-size:11px;">${escapeHtml(p.name.slice(0,2).toUpperCase())}</div>
+                  <div class="avatar" style="background:${p.name === 'Grandma' ? '#888780' : AVATARCOLORS[p.colorIdx % AVATARCOLORS.length]};width:30px;height:30px;font-size:11px;">${escapeHtml(initials)}</div>
                   <span style="font-weight:500;">${escapeHtml(p.name)}</span>
                 </div>
               </td>
@@ -1656,7 +1678,7 @@ function renderLeaderboard() {
           }).join('')}
         </tbody>
       </table>
-      <div style="margin-top:12px; font-size:11px; color:var(--muted);">Live leaderboard scores are not available yet, so standings are still using the seed-based placeholder scoring.</div>
+      <div style="margin-top:12px; font-size:11px; color:var(--muted);">Live leaderboard scores are not available yet, so standings are still using seed-based placeholder scoring.</div>
     `;
     return;
   }
@@ -1694,12 +1716,13 @@ function renderLeaderboard() {
           const posCls = i === 0 ? 'pos-1' : i === 1 ? 'pos-2' : i === 2 ? 'pos-3' : 'pos-other';
           const scoreTxt = p.score === 0 ? 'E' : p.score > 0 ? `+${p.score}` : `${p.score}`;
           const scoreCls = p.score < 0 ? 'score-under' : p.score > 0 ? 'score-over' : 'score-even';
+          const initials = p.name === 'Grandma' ? 'GR' : p.name.slice(0,2).toUpperCase();
 
           return `<tr>
             <td><span class="pos-badge ${posCls}">${i + 1}</span></td>
             <td>
               <div style="display:flex;align-items:center;gap:8px;">
-                <div class="avatar" style="background:${AVATARCOLORS[p.colorIdx % AVATARCOLORS.length]};width:30px;height:30px;font-size:11px;">${escapeHtml(p.name.slice(0,2).toUpperCase())}</div>
+                <div class="avatar" style="background:${p.name === 'Grandma' ? '#888780' : AVATARCOLORS[p.colorIdx % AVATARCOLORS.length]};width:30px;height:30px;font-size:11px;">${escapeHtml(initials)}</div>
                 <span style="font-weight:500;">${escapeHtml(p.name)}</span>
               </div>
             </td>
@@ -1709,7 +1732,7 @@ function renderLeaderboard() {
         }).join('')}
       </tbody>
     </table>
-    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Standings are now using current leaderboard totals from the live_scores table. Lower score is better.</div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Standings are using current leaderboard totals from the live_scores table. Lower score is better.</div>
   `;
 }
 
