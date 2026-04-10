@@ -2108,7 +2108,9 @@ const updatedAt = rows.length
 
                 return `
                   <tr class="${row.isTracked ? 'highlight-row' : ''}">
-                    <td class="live-pos">${escapeHtml(row.position_text || '-')}</td>
+                    <td class="live-pos">${escapeHtml(
+  row.position_text || (row.position_sort != null ? String(row.position_sort) : '-')
+)}</td>
                     <td>
                       <div style="font-weight:500;">${escapeHtml(row.golfer_name)}</div>
                       <div style="font-size:11px; color:var(--muted);">${row.rank ? `Pool golfer · Seed #${row.rank}` : 'Not on a fantasy team'}</div>
