@@ -973,15 +973,7 @@ function sortAllLiveRowsClient(rows) {
   });
 }  
 function isRenderableLeaderboardRow(row) {
-  if (!row || row.row_type !== 'leaderboard') return false;
-
-  const total = parseScoreToNumber(row.total_text);
-  if (total === null) return false;
-
-  const pos = parsePositionToNumber(row.position_text);
-  const thru = parseThruToSortableValue(row.thru_text);
-
-  return pos !== null || thru !== null;
+  return row && row.row_type === 'leaderboard';
 }
 
 function sortLeaderboardRowsClient(rows) {
