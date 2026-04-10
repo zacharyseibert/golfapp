@@ -1848,9 +1848,16 @@ async function loadLiveScores() {
       const bScore = parseLiveScoreValue(b.total_text);
       if (aScore !== null && bScore !== null && aScore !== bScore) return aScore - bScore;
 
-      const aName = String(a.golfer_name || '');
-      const bName = String(b.golfer_name || '');
-      return aName.localeCompare(bName);
+      return String(a.golfer_name || '').localeCompare(String(b.golfer_name || ''));
+    });
+  }
+
+  function sortFieldRowsClient(rows) {
+    return [...rows].sort((a, b) => {
+      const aTee = String(a.tee_time_text || '');
+      const bTee = String(b.tee_time_text || '');
+      if (aTee && bTee && aTee !== bTee) return aTee.localeCompare(bTee);
+      return String(a.golfer_name || '').localeCompare(String(b.golfer_name || ''));
     });
   }
 
@@ -1885,7 +1892,6 @@ async function loadLiveScores() {
     .from('live_scores')
     .select('*')
     .eq('contest_id', contest.id)
-    .order('position_sort', { ascending: true, nullsFirst: false })
     .order('sort_order', { ascending: true, nullsFirst: false })
     .order('golfer_name', { ascending: true });
 
@@ -1896,25 +1902,10 @@ async function loadLiveScores() {
   }
 
   const rawRows = data || [];
-
-  const cleanedLeaderboardRows = sortLeaderboardRowsClient(
-    rawRows.filter(isRenderableLeaderboardRow)
-  );
-
-  const cleanedFieldRows = rawRows
-    .filter(row => row.row_type === 'field')
-    .sort((a, b) => String(a.golfer_name || '').localeCompare(String(b.golfer_name || '')));
-
-  const isFieldMode = cleanedLeaderboardRows.length === 0 && cleanedFieldRows.length > 0;
-  const displayRows = cleanedLeaderboardRows.length > 0 ? cleanedLeaderboardRows : cleanedFieldRows;
-
-  appState.liveScores = displayRows;
+  appState.liveScores = rawRows;
 
   const ownerLookup = buildOwnerLookup();
   const ownershipRows = buildOwnershipRows();
-  const updatedAt = displayRows.length
-    ? new Date(displayRows[0].updated_at || Date.now())
-    : null;
 
   if (!rawRows.length) {
     const preCopy = timing.state === 'pre'
@@ -1963,6 +1954,117 @@ async function loadLiveScores() {
     renderLeaderboard();
     return;
   }
+
+  const leaderboardRows = sortLeaderboardRowsClient(
+    rawRows.filter(isRenderableLeaderboardRow)
+  );
+
+  const fieldRows = sortFieldRowsClient(
+    rawRows.filter(row => row.row_type === 'field')
+  );
+
+  const combinedRows = [...leaderboardRows, ...fieldRows];
+
+  const rows = combinedRows.map(row => {
+    const owner = ownerLookup.get(normalizeGolferName(row.golfer_name));
+    return {
+      ...row,
+      owner: owner?.owner || '',
+      rank: owner?.rank || null,
+      country: owner?.country || '',
+      isTracked: !!owner
+    };
+  });
+
+  const updatedAt = rows.length
+    ? new Date(rows[0].updated_at || Date.now())
+    : null;
+
+  body.innerHTML = `
+    <div class="live-layout">
+      <div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="flex items-center justify-between" style="margin-bottom:14px; gap:10px; flex-wrap:wrap;">
+            <div>
+              <div class="section-kicker">Scraped leaderboard</div>
+              <h3 style="font-family:'Playfair Display',serif; font-size:22px;">${escapeHtml(major.name)} Leaderboard</h3>
+            </div>
+            <div class="source-meta">
+              <span class="source-pill">${rows.length} golfers</span>
+              <span class="source-pill">${updatedAt ? `Updated ${updatedAt.toLocaleString()}` : 'Updated just now'}</span>
+            </div>
+          </div>
+          <table class="live-table">
+            <thead>
+              <tr>
+                <th style="width:44px;">Pos</th>
+                <th>Golfer</th>
+                <th style="width:70px;">Total</th>
+                <th style="width:70px;">Today</th>
+                <th style="width:70px;">Thru</th>
+                <th style="width:140px;">On Team</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => {
+                const totalCls = String(row.total_text || '').startsWith('-')
+                  ? 'score-under'
+                  : String(row.total_text || '').startsWith('+')
+                    ? 'score-over'
+                    : 'score-even';
+
+                const todayCls = String(row.round_text || '').startsWith('-')
+                  ? 'score-under'
+                  : String(row.round_text || '').startsWith('+')
+                    ? 'score-over'
+                    : 'score-even';
+
+                return `
+                  <tr class="${row.isTracked ? 'highlight-row' : ''}">
+                    <td class="live-pos">${escapeHtml(row.position_text || '-')}</td>
+                    <td>
+                      <div style="font-weight:500;">${escapeHtml(row.golfer_name)}</div>
+                      <div style="font-size:11px; color:var(--muted);">${row.rank ? `Pool golfer · Seed #${row.rank}` : 'Not on a fantasy team'}</div>
+                    </td>
+                    <td class="${totalCls}">${escapeHtml(row.total_text || '-')}</td>
+                    <td class="${todayCls}">${escapeHtml(row.round_text || '-')}</td>
+                    <td style="color:var(--muted);">${escapeHtml(row.thru_text || '-')}</td>
+                    <td>${row.owner ? `<span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span>` : '<span class="text-muted">—</span>'}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+          <div class="live-note">Leaderboard rows are shown first by current tournament position. Golfers who have not started yet remain in the table with blank live scoring.</div>
+          <div class="mt-16">
+            <a class="btn btn-ghost btn-sm" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.buttonLabel)}</a>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-title">Fantasy Ownership Tracker</div>
+          <div class="team-legend">${renderTeamLegend()}</div>
+          <div class="tracker-list">
+            ${rows.filter(r => r.isTracked).map(row => `
+              <div class="tracker-row">
+                <div class="tracker-top">
+                  <div>
+                    <div class="tracker-name">${escapeHtml(row.golfer_name)}</div>
+                    <div class="tracker-sub">${escapeHtml((row.position_text || '-') + ' · ' + (row.total_text || '-') + ' total · ' + (row.thru_text || '-'))}</div>
+                  </div>
+                </div>
+                <div class="owner-list"><span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span></div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  renderLeaderboard();
+}
 
   const rows = displayRows.map(row => {
     const owner = ownerLookup.get(normalizeGolferName(row.golfer_name));
