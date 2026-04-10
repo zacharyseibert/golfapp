@@ -891,6 +891,67 @@ function calcFantasyScore(golfers) {
   }, 0);
 }
 
+function parseScoreToNumber(scoreText) {
+  if (scoreText == null) return null;
+
+  const s = String(scoreText).trim().toUpperCase();
+  if (!s || s === '-' || s === '--') return null;
+  if (s === 'E') return 0;
+
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeCompareName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildLiveScoreMap() {
+  const map = new Map();
+
+  (appState.liveScores || []).forEach(row => {
+    if (row.row_type !== 'leaderboard') return;
+
+    const key = normalizeCompareName(row.golfer_name);
+    const numericScore = parseScoreToNumber(row.total_text);
+
+    if (!key || numericScore == null) return;
+
+    map.set(key, {
+      score: numericScore,
+      position_text: row.position_text || '-',
+      total_text: row.total_text || '-',
+      thru_text: row.thru_text || '-'
+    });
+  });
+
+  return map;
+}
+
+function calcTeamLiveScore(golfers, liveScoreMap) {
+  let total = 0;
+  let counted = 0;
+
+  (golfers || []).forEach(golfer => {
+    const key = normalizeCompareName(golfer.name);
+    const live = liveScoreMap.get(key);
+    if (!live) return;
+    total += live.score;
+    counted += 1;
+  });
+
+  return {
+    total,
+    counted
+  };
+}  
+
 function getTierClass(rank, participantCount) {
   if (!participantCount) return 't4';
   const tierIndex = Math.floor((Number(rank) - 1) / participantCount) + 1;
