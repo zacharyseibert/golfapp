@@ -1766,12 +1766,12 @@ async function loadLiveScores() {
   }
 
   const { data, error } = await sb
-    .from('live_scores')
-    .select('*')
-    .eq('contest_id', contest.id)
-    .order('sort_order', { ascending: true, nullsFirst: false })
-    .order('position_sort', { ascending: true, nullsFirst: false })
-    .order('golfer_name', { ascending: true });
+  .from('live_scores')
+  .select('*')
+  .eq('contest_id', contest.id)
+  .order('position_sort', { ascending: true, nullsFirst: false })
+  .order('sort_order', { ascending: true, nullsFirst: false })
+  .order('golfer_name', { ascending: true });
 
   if (error) {
     console.error(error);
