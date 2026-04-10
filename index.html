@@ -917,6 +917,61 @@ function parseThruToSortableValue(thruText) {
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
+
+function parseTeeTimeToSortableValue(teeTimeText) {
+  if (!teeTimeText) return null;
+
+  const s = String(teeTimeText).trim().toUpperCase();
+  const match = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+  if (!match) return null;
+
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const meridiem = match[3];
+
+  if (meridiem === 'AM' && hour === 12) hour = 0;
+  if (meridiem === 'PM' && hour !== 12) hour += 12;
+
+  return hour * 60 + minute;
+}
+
+function hasDisplayableLiveTotal(row) {
+  return row && row.row_type === 'leaderboard' && parseScoreToNumber(row.total_text) !== null;
+}
+
+function sortAllLiveRowsClient(rows) {
+  return [...rows].sort((a, b) => {
+    const aHasTotal = hasDisplayableLiveTotal(a);
+    const bHasTotal = hasDisplayableLiveTotal(b);
+
+    if (aHasTotal && !bHasTotal) return -1;
+    if (!aHasTotal && bHasTotal) return 1;
+
+    const aTotal = parseScoreToNumber(a.total_text);
+    const bTotal = parseScoreToNumber(b.total_text);
+    if (aTotal !== null && bTotal !== null && aTotal !== bTotal) {
+      return aTotal - bTotal;
+    }
+
+    const aPos = parsePositionToNumber(a.position_text) ?? 9999;
+    const bPos = parsePositionToNumber(b.position_text) ?? 9999;
+    if (aPos !== bPos) return aPos - bPos;
+
+    const aThru = parseThruToSortableValue(a.thru_text);
+    const bThru = parseThruToSortableValue(b.thru_text);
+    if (aThru !== null && bThru !== null && aThru !== bThru) {
+      return bThru - aThru;
+    }
+
+    const aTee = parseTeeTimeToSortableValue(a.tee_time_text);
+    const bTee = parseTeeTimeToSortableValue(b.tee_time_text);
+    if (aTee !== null && bTee !== null && aTee !== bTee) {
+      return aTee - bTee;
+    }
+
+    return String(a.golfer_name || '').localeCompare(String(b.golfer_name || ''));
+  });
+}  
 function isRenderableLeaderboardRow(row) {
   if (!row || row.row_type !== 'leaderboard') return false;
 
@@ -1834,7 +1889,6 @@ async function loadLiveScores() {
   const label = $('live-tournament-label');
   const refreshBtn = $('btn-refresh-live');
 
-
   if (refreshBtn) {
     refreshBtn.disabled = !contest || !contest.teams_generated || !isCommissioner();
     refreshBtn.title = !contest
@@ -1876,8 +1930,6 @@ async function loadLiveScores() {
   }
 
   const rawRows = data || [];
-  appState.liveScores = rawRows;
-
   const ownerLookup = buildOwnerLookup();
   const ownershipRows = buildOwnershipRows();
 
@@ -1929,17 +1981,9 @@ async function loadLiveScores() {
     return;
   }
 
-  const leaderboardRows = sortLeaderboardRowsClient(
-    rawRows.filter(isRenderableLeaderboardRow)
-  );
+  const sortedRows = sortAllLiveRowsClient(rawRows);
 
-  const fieldRows = sortFieldRowsClient(
-    rawRows.filter(row => row.row_type === 'field')
-  );
-
-  const combinedRows = [...leaderboardRows, ...fieldRows];
-
-  const rows = combinedRows.map(row => {
+  const rows = sortedRows.map(row => {
     const owner = ownerLookup.get(normalizeGolferName(row.golfer_name));
     return {
       ...row,
@@ -1949,6 +1993,8 @@ async function loadLiveScores() {
       isTracked: !!owner
     };
   });
+
+  appState.liveScores = rows.filter(row => row.row_type === 'leaderboard');
 
   const updatedAt = rows.length
     ? new Date(rows[0].updated_at || Date.now())
@@ -2002,14 +2048,14 @@ async function loadLiveScores() {
                     </td>
                     <td class="${totalCls}">${escapeHtml(row.total_text || '-')}</td>
                     <td class="${todayCls}">${escapeHtml(row.round_text || '-')}</td>
-                    <td style="color:var(--muted);">${escapeHtml(row.thru_text || '-')}</td>
+                    <td style="color:var(--muted);">${escapeHtml(row.thru_text || row.tee_time_text || '-')}</td>
                     <td>${row.owner ? `<span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span>` : '<span class="text-muted">—</span>'}</td>
                   </tr>
                 `;
               }).join('')}
             </tbody>
           </table>
-          <div class="live-note">Leaderboard rows are shown first by current tournament position. Golfers who have not started yet remain in the table with blank live scoring.</div>
+          <div class="live-note">Rows are sorted by current total to par first, regardless of whether the golfer is active, finished, or not yet started.</div>
           <div class="mt-16">
             <a class="btn btn-ghost btn-sm" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.buttonLabel)}</a>
           </div>
@@ -2025,7 +2071,7 @@ async function loadLiveScores() {
                 <div class="tracker-top">
                   <div>
                     <div class="tracker-name">${escapeHtml(row.golfer_name)}</div>
-                    <div class="tracker-sub">${escapeHtml((row.position_text || '-') + ' · ' + (row.total_text || '-') + ' total · ' + (row.thru_text || '-'))}</div>
+                    <div class="tracker-sub">${escapeHtml((row.position_text || '-') + ' · ' + (row.total_text || '-') + ' total · ' + (row.thru_text || row.tee_time_text || '-'))}</div>
                   </div>
                 </div>
                 <div class="owner-list"><span class="owner-pill">On Team: ${escapeHtml(row.owner)}</span></div>
