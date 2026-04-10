@@ -902,6 +902,50 @@ function parseScoreToNumber(scoreText) {
   return Number.isFinite(n) ? n : null;
 }
 
+function parsePositionToNumber(positionText) {
+  if (positionText == null) return null;
+  const digits = String(positionText).replace(/[^0-9]/g, '');
+  if (!digits) return null;
+  const n = Number(digits);
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseThruToSortableValue(thruText) {
+  if (thruText == null) return null;
+  const s = String(thruText).trim().toUpperCase();
+  if (s === 'F') return 99;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function isRenderableLeaderboardRow(row) {
+  if (!row || row.row_type !== 'leaderboard') return false;
+
+  const pos = parsePositionToNumber(row.position_text);
+  const total = parseScoreToNumber(row.total_text);
+  const thru = parseThruToSortableValue(row.thru_text);
+
+  return pos !== null && total !== null && thru !== null;
+}
+
+function sortLeaderboardRowsClient(rows) {
+  return [...rows].sort((a, b) => {
+    const aPos = parsePositionToNumber(a.position_text) ?? 9999;
+    const bPos = parsePositionToNumber(b.position_text) ?? 9999;
+    if (aPos !== bPos) return aPos - bPos;
+
+    const aTotal = parseScoreToNumber(a.total_text) ?? 9999;
+    const bTotal = parseScoreToNumber(b.total_text) ?? 9999;
+    if (aTotal !== bTotal) return aTotal - bTotal;
+
+    const aThru = parseThruToSortableValue(a.thru_text) ?? -1;
+    const bThru = parseThruToSortableValue(b.thru_text) ?? -1;
+    if (aThru !== bThru) return bThru - aThru;
+
+    return String(a.golfer_name || '').localeCompare(String(b.golfer_name || ''));
+  });
+}  
+
 function normalizeCompareName(name) {
   return String(name || '')
     .toLowerCase()
@@ -915,9 +959,9 @@ function normalizeCompareName(name) {
 function buildLiveScoreMap() {
   const map = new Map();
 
-  (appState.liveScores || []).forEach(row => {
-    if (row.row_type !== 'leaderboard') return;
-
+  sortLeaderboardRowsClient(
+    (appState.liveScores || []).filter(isRenderableLeaderboardRow)
+  ).forEach(row => {
     const key = normalizeCompareName(row.golfer_name);
     const numericScore = parseScoreToNumber(row.total_text);
 
@@ -1630,8 +1674,16 @@ async function renderLeaderboard() {
     console.error('renderLeaderboard fetch failed', err);
   }
 
-  const liveScoreMap = buildLiveScoreMap();
-  const hasLiveLeaderboard = liveRows.some(r => r.row_type === 'leaderboard');
+  const cleanedLeaderboardRows = sortLeaderboardRowsClient(
+  liveRows.filter(isRenderableLeaderboardRow)
+);
+const hasLiveLeaderboard = cleanedLeaderboardRows.length > 0;
+
+appState.liveScores = hasLiveLeaderboard
+  ? cleanedLeaderboardRows
+  : liveRows;
+
+const liveScoreMap = buildLiveScoreMap();
 
   if (!hasLiveLeaderboard) {
     pill.textContent = liveRows.some(r => r.row_type === 'field') ? 'Field Loaded' : 'Awaiting Live Scores';
@@ -1744,9 +1796,73 @@ async function loadLiveScores() {
   const label = $('live-tournament-label');
   const refreshBtn = $('btn-refresh-live');
 
+  function parseLiveScoreValue(scoreText) {
+    if (scoreText == null) return null;
+    const s = String(scoreText).trim().toUpperCase();
+    if (!s || s === '-' || s === '--') return null;
+    if (s === 'E') return 0;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function parseLivePositionValue(positionText) {
+    if (!positionText) return null;
+    const raw = String(positionText).trim().toUpperCase();
+    const digits = raw.replace(/[^0-9]/g, '');
+    if (!digits) return null;
+    const n = Number(digits);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function isValidLiveTotal(totalText) {
+    const n = parseLiveScoreValue(totalText);
+    return n !== null && n >= -25 && n <= 25;
+  }
+
+  function isValidLiveThru(thruText) {
+    if (!thruText) return false;
+    const v = String(thruText).trim().toUpperCase();
+    if (v === 'F') return true;
+    if (/^\d{1,2}$/.test(v)) {
+      const n = Number(v);
+      return n >= 1 && n <= 18;
+    }
+    return false;
+  }
+
+  function isRenderableLeaderboardRow(row) {
+    if (!row || row.row_type !== 'leaderboard') return false;
+    if (!row.position_text) return false;
+    if (!isValidLiveTotal(row.total_text)) return false;
+    if (!isValidLiveThru(row.thru_text)) return false;
+    return true;
+  }
+
+  function sortLeaderboardRowsClient(rows) {
+    return [...rows].sort((a, b) => {
+      const aPos = a.position_sort ?? parseLivePositionValue(a.position_text) ?? 9999;
+      const bPos = b.position_sort ?? parseLivePositionValue(b.position_text) ?? 9999;
+      if (aPos !== bPos) return aPos - bPos;
+
+      const aScore = parseLiveScoreValue(a.total_text);
+      const bScore = parseLiveScoreValue(b.total_text);
+      if (aScore !== null && bScore !== null && aScore !== bScore) return aScore - bScore;
+
+      const aName = String(a.golfer_name || '');
+      const bName = String(b.golfer_name || '');
+      return aName.localeCompare(bName);
+    });
+  }
+
   if (refreshBtn) {
     refreshBtn.disabled = !contest || !contest.teams_generated || !isCommissioner();
-    refreshBtn.title = !contest ? 'Open a contest first.' : !contest.teams_generated ? 'Generate teams first.' : isCommissioner() ? '' : 'Only the commissioner can refresh live scores.';
+    refreshBtn.title = !contest
+      ? 'Open a contest first.'
+      : !contest.teams_generated
+        ? 'Generate teams first.'
+        : isCommissioner()
+          ? ''
+          : 'Only the commissioner can refresh live scores.';
   }
 
   if (!contest) {
@@ -1766,12 +1882,12 @@ async function loadLiveScores() {
   }
 
   const { data, error } = await sb
-  .from('live_scores')
-  .select('*')
-  .eq('contest_id', contest.id)
-  .order('position_sort', { ascending: true, nullsFirst: false })
-.order('sort_order', { ascending: true, nullsFirst: false })
-  .order('golfer_name', { ascending: true });
+    .from('live_scores')
+    .select('*')
+    .eq('contest_id', contest.id)
+    .order('position_sort', { ascending: true, nullsFirst: false })
+    .order('sort_order', { ascending: true, nullsFirst: false })
+    .order('golfer_name', { ascending: true });
 
   if (error) {
     console.error(error);
@@ -1779,14 +1895,28 @@ async function loadLiveScores() {
     return;
   }
 
-  appState.liveScores = data || [];
+  const rawRows = data || [];
+
+  const cleanedLeaderboardRows = sortLeaderboardRowsClient(
+    rawRows.filter(isRenderableLeaderboardRow)
+  );
+
+  const cleanedFieldRows = rawRows
+    .filter(row => row.row_type === 'field')
+    .sort((a, b) => String(a.golfer_name || '').localeCompare(String(b.golfer_name || '')));
+
+  const isFieldMode = cleanedLeaderboardRows.length === 0 && cleanedFieldRows.length > 0;
+  const displayRows = cleanedLeaderboardRows.length > 0 ? cleanedLeaderboardRows : cleanedFieldRows;
+
+  appState.liveScores = displayRows;
 
   const ownerLookup = buildOwnerLookup();
   const ownershipRows = buildOwnershipRows();
-  const updatedAt = data && data.length ? new Date(data[0].updated_at || Date.now()) : null;
-  const isFieldMode = !!(data && data.length && data[0].row_type === 'field');
+  const updatedAt = displayRows.length
+    ? new Date(displayRows[0].updated_at || Date.now())
+    : null;
 
-  if (!data || !data.length) {
+  if (!rawRows.length) {
     const preCopy = timing.state === 'pre'
       ? `The championship has not started yet. The commissioner can click <strong>Refresh Live Scores</strong> to try pulling the tournament field and tee times before play begins.`
       : `No scraped rows are stored yet. Click <strong>Refresh Live Scores</strong> to run the Edge Function, or use the official site while you finish setup.`;
@@ -1834,7 +1964,7 @@ async function loadLiveScores() {
     return;
   }
 
-  const rows = data.map(row => {
+  const rows = displayRows.map(row => {
     const owner = ownerLookup.get(normalizeGolferName(row.golfer_name));
     return {
       ...row,
@@ -1939,8 +2069,18 @@ async function loadLiveScores() {
             </thead>
             <tbody>
               ${rows.map(row => {
-                const totalCls = String(row.total_text || '').startsWith('-') ? 'score-under' : String(row.total_text || '').startsWith('+') ? 'score-over' : 'score-even';
-                const todayCls = String(row.round_text || '').startsWith('-') ? 'score-under' : String(row.round_text || '').startsWith('+') ? 'score-over' : 'score-even';
+                const totalCls = String(row.total_text || '').startsWith('-')
+                  ? 'score-under'
+                  : String(row.total_text || '').startsWith('+')
+                    ? 'score-over'
+                    : 'score-even';
+
+                const todayCls = String(row.round_text || '').startsWith('-')
+                  ? 'score-under'
+                  : String(row.round_text || '').startsWith('+')
+                    ? 'score-over'
+                    : 'score-even';
+
                 return `
                   <tr class="${row.isTracked ? 'highlight-row' : ''}">
                     <td class="live-pos">${escapeHtml(row.position_text || '-')}</td>
