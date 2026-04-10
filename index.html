@@ -1592,27 +1592,93 @@ function renderLeaderboard() {
   const body = $('leaderboard-body');
   const pill = $('lb-status-pill');
   const contest = appState.contest;
+
   if (!contest) {
     pill.textContent = 'No Contest';
     pill.className = 'status-pill status-draft';
     body.innerHTML = '<div class="empty-state">Create a contest first.</div>';
+    renderLeaderboard();
     return;
   }
+
   if (!contest.teams_generated) {
     pill.textContent = contest.locked ? 'Locked' : 'Entries Open';
     pill.className = 'status-pill ' + (contest.locked ? 'status-upcoming' : 'status-draft');
     body.innerHTML = '<div class="empty-state">Standings will populate once the commissioner generates the teams.</div>';
     return;
   }
+
+  const liveScoreMap = buildLiveScoreMap();
+  const hasLiveLeaderboard = (appState.liveScores || []).some(r => r.row_type === 'leaderboard');
+
+  if (!hasLiveLeaderboard) {
+    pill.textContent = 'Field Loaded';
+    pill.className = 'status-pill status-upcoming';
+
+    const seeded = appState.teams.map((team, idx) => ({
+      name: team.participant_name,
+      golfers: team.golfers || [],
+      score: calcFantasyScore(team.golfers || []),
+      counted: 0,
+      colorIdx: idx,
+    })).sort((a, b) => a.score - b.score);
+
+    body.innerHTML = `
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th style="width:40px;">Pos</th>
+            <th>Player</th>
+            <th>Team</th>
+            <th style="text-align:right;">Seed Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${seeded.map((p, i) => {
+            const posCls = i === 0 ? 'pos-1' : i === 1 ? 'pos-2' : i === 2 ? 'pos-3' : 'pos-other';
+            const scoreTxt = p.score === 0 ? 'E' : p.score > 0 ? `+${p.score}` : `${p.score}`;
+            const scoreCls = p.score < 0 ? 'score-under' : p.score > 0 ? 'score-over' : 'score-even';
+
+            return `<tr>
+              <td><span class="pos-badge ${posCls}">${i + 1}</span></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="avatar" style="background:${AVATARCOLORS[p.colorIdx % AVATARCOLORS.length]};width:30px;height:30px;font-size:11px;">${escapeHtml(p.name.slice(0,2).toUpperCase())}</div>
+                  <span style="font-weight:500;">${escapeHtml(p.name)}</span>
+                </div>
+              </td>
+              <td>
+                <div class="team-golfers">
+                  ${p.golfers.map(g => `<span class="golfer-pill ${getTierClass(g.rank, Math.max(appState.participants.length, 1))}">${escapeHtml(g.name)}</span>`).join('')}
+                </div>
+              </td>
+              <td style="text-align:right;" class="${scoreCls}">${scoreTxt}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:12px; font-size:11px; color:var(--muted);">Live leaderboard scores are not available yet, so standings are still using the seed-based placeholder scoring.</div>
+    `;
+    return;
+  }
+
   pill.textContent = 'Live';
   pill.className = 'status-pill status-live';
 
-  const scored = appState.teams.map((team, idx) => ({
-    name: team.participant_name,
-    golfers: team.golfers || [],
-    score: calcFantasyScore(team.golfers || []),
-    colorIdx: idx,
-  })).sort((a, b) => a.score - b.score);
+  const scored = appState.teams.map((team, idx) => {
+    const live = calcTeamLiveScore(team.golfers || [], liveScoreMap);
+    return {
+      name: team.participant_name,
+      golfers: team.golfers || [],
+      score: live.total,
+      counted: live.counted,
+      colorIdx: idx,
+    };
+  }).sort((a, b) => {
+    if (a.score !== b.score) return a.score - b.score;
+    if (b.counted !== a.counted) return b.counted - a.counted;
+    return a.name.localeCompare(b.name);
+  });
 
   body.innerHTML = `
     <table class="lb-table">
@@ -1620,8 +1686,8 @@ function renderLeaderboard() {
         <tr>
           <th style="width:40px;">Pos</th>
           <th>Player</th>
-          <th>Team</th>
-          <th style="text-align:right;">Score</th>
+          <th>Golfers Counted</th>
+          <th style="text-align:right;">Live Score</th>
         </tr>
       </thead>
       <tbody>
@@ -1629,6 +1695,7 @@ function renderLeaderboard() {
           const posCls = i === 0 ? 'pos-1' : i === 1 ? 'pos-2' : i === 2 ? 'pos-3' : 'pos-other';
           const scoreTxt = p.score === 0 ? 'E' : p.score > 0 ? `+${p.score}` : `${p.score}`;
           const scoreCls = p.score < 0 ? 'score-under' : p.score > 0 ? 'score-over' : 'score-even';
+
           return `<tr>
             <td><span class="pos-badge ${posCls}">${i + 1}</span></td>
             <td>
@@ -1637,17 +1704,13 @@ function renderLeaderboard() {
                 <span style="font-weight:500;">${escapeHtml(p.name)}</span>
               </div>
             </td>
-            <td>
-              <div class="team-golfers">
-                ${p.golfers.map(g => `<span class="golfer-pill ${getTierClass(Number(g.rank_order || g.rank || 999), Math.max(1, appState.participants.length))}">${escapeHtml(g.name)}</span>`).join('')}
-              </div>
-            </td>
+            <td>${p.counted} / ${p.golfers.length}</td>
             <td style="text-align:right;" class="${scoreCls}">${scoreTxt}</td>
           </tr>`;
         }).join('')}
       </tbody>
     </table>
-    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Standings show each team's full roster. Scoring is still placeholder seed-based scoring until a reliable live feed is connected.</div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted);">Standings are now using current leaderboard totals from the live_scores table. Lower score is better.</div>
   `;
 }
 
@@ -1691,6 +1754,8 @@ async function loadLiveScores() {
     body.innerHTML = '<div class="empty-state">Could not load live scores. Make sure the <strong>live_scores</strong> table exists and includes <strong>row_type</strong> and <strong>tee_time_text</strong>.</div>';
     return;
   }
+
+  appState.liveScores = data || [];
 
   const ownerLookup = buildOwnerLookup();
   const ownershipRows = buildOwnershipRows();
